@@ -23,6 +23,18 @@ Operational notes for Vercel, DNS, n8n, Google Sheets, Gmail drafts, and product
 docs/ADMIN_RUNBOOK.md
 ```
 
+Sales positioning, demo flow, packages, and outreach copy are in:
+
+```text
+docs/SALES_PLAYBOOK.md
+```
+
+B2B sales landing page:
+
+```text
+/system
+```
+
 ## Local Development
 
 ```bash
