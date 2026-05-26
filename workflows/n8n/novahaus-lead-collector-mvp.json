@@ -1,0 +1,600 @@
+{
+  "name": "NovaHaus Lead Collector - MVP",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "novahaus-lead",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "a7f8bf29-9dc5-4d93-a2fd-bf71e48ce3d7",
+      "name": "Lead Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -820,
+        20
+      ],
+      "webhookId": "novahaus-lead"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst headers = input.headers || {};\nconst lead = input.body || input;\n\nconst expectedSecret = (typeof $env !== 'undefined' && $env.N8N_LEAD_WEBHOOK_SECRET) ? $env.N8N_LEAD_WEBHOOK_SECRET : '';\nconst providedSecret = headers['x-lead-webhook-secret'] || headers['X-Lead-Webhook-Secret'] || '';\n\nif (expectedSecret && providedSecret !== expectedSecret) {\n  return [{\n    json: {\n      ok: false,\n      statusCode: 401,\n      error: 'invalid_webhook_secret',\n    },\n  }];\n}\n\nconst WOHNUNG_LABELS = {\n  '3-zimmer': '3-Zimmer mit Garten (92 m², €329.000)',\n  '4-zimmer': '4-Zimmer Dachterrasse (105 m², €359.000)',\n  'beide': 'Beide Wohnungen (€688.000)',\n};\n\nconst ZEITRAHMEN_LABELS = {\n  'sofort': 'So schnell wie möglich',\n  '3-6-monate': 'In 3–6 Monaten',\n  'informieren': 'Informiert sich erst',\n};\n\nconst EIGENKAPITAL_LABELS = {\n  'unter-30k': 'Unter €30.000',\n  '30-50k': '€30.000 – €50.000',\n  '50-80k': '€50.000 – €80.000',\n  'ueber-80k': 'Über €80.000',\n  'keine-angabe': 'Keine Angabe',\n};\n\nconst FINANZIERUNG_LABELS = {\n  'vorhanden': 'Ja, vorhanden',\n  'in-planung': 'In Planung',\n  'benoetigt-hilfe': 'Braucht Unterstützung',\n};\n\nfunction addMinutes(isoDate, minutes) {\n  return new Date(new Date(isoDate).getTime() + minutes * 60 * 1000).toISOString();\n}\n\nfunction asBool(value) {\n  return value === true || value === 'true' || value === 'yes' || value === 'Ja';\n}\n\nfunction qualify({ leadScore, timeline, equity, financing, underqualified }) {\n  const hasMinimumCapital = ['30-50k', '50-80k', 'ueber-80k'].includes(equity);\n  const hasStrongCapital = ['50-80k', 'ueber-80k'].includes(equity);\n  const isActiveBuyer = ['sofort', '3-6-monate'].includes(timeline);\n  const financingReady = financing === 'vorhanden';\n\n  if (underqualified || equity === 'unter-30k') {\n    return {\n      segment: 'not_qualified',\n      status: 'not_qualified',\n      priority: 'P4',\n      nextAction: 'send_soft_disqualification_or_financing_options',\n      assignedTo: 'ai_agent',\n      followupMinutes: 4320,\n      handoffRequired: false,\n      handoffReason: '',\n      qualificationReason: 'minimum_equity_not_met',\n    };\n  }\n\n  if (leadScore === 'hot' || (timeline === 'sofort' && hasStrongCapital && financingReady)) {\n    return {\n      segment: 'hot',\n      status: 'ready_for_call',\n      priority: 'P1',\n      nextAction: 'call_center_call_within_15min_and_send_expose',\n      assignedTo: 'call_center',\n      followupMinutes: 15,\n      handoffRequired: true,\n      handoffReason: 'hot_lead_ready_for_call',\n      qualificationReason: 'urgent_timeline_capital_and_financing_ready',\n    };\n  }\n\n  if (leadScore === 'warm' || (isActiveBuyer && hasMinimumCapital)) {\n    return {\n      segment: 'warm',\n      status: 'ai_follow_up',\n      priority: 'P2',\n      nextAction: 'send_clarifying_question_and_offer_call',\n      assignedTo: 'ai_agent',\n      followupMinutes: 120,\n      handoffRequired: false,\n      handoffReason: '',\n      qualificationReason: 'active_buyer_but_financing_or_timing_needs_clarity',\n    };\n  }\n\n  return {\n    segment: 'cold',\n    status: 'nurture',\n    priority: 'P3',\n    nextAction: 'send_nurture_email',\n    assignedTo: 'nurture_agent',\n    followupMinutes: 1440,\n    handoffRequired: false,\n    handoffReason: '',\n    qualificationReason: 'early_research_or_missing_financing_signal',\n  };\n}\n\nfunction emailDraft({ firstName, segment, wohnungLabel, timelineLabel, equityLabel, financingLabel }) {\n  const greeting = firstName ? 'Hallo ' + firstName + ',' : 'Hallo,';\n  const objectLine = wohnungLabel ? 'zur ' + wohnungLabel : 'zu Ihrer Anfrage';\n\n  if (segment === 'hot') {\n    return {\n      email_subject: 'Ihr Exposé und ein kurzer Abstimmungstermin',\n      email_draft: greeting + '\\n\\nvielen Dank für Ihr Interesse ' + objectLine + '. Ihre Angaben passen sehr gut zu einem kurzfristigen Beratungsgespräch.\\n\\nDarf unser Team Sie heute kurz telefonisch erreichen, um die nächsten Schritte und verfügbare Besichtigungstermine abzustimmen?\\n\\nViele Grüße\\nNovaHaus Immobilien',\n    };\n  }\n\n  if (segment === 'warm') {\n    return {\n      email_subject: 'Kurze Rückfrage zu Ihrer Finanzierung',\n      email_draft: greeting + '\\n\\nvielen Dank für Ihre Anfrage ' + objectLine + '. Damit wir Ihnen direkt die passenden nächsten Schritte senden können: Haben Sie bereits mit einer Bank oder einem Finanzierungsberater über den Kauf gesprochen?\\n\\nIhre Angaben: ' + timelineLabel + ', ' + equityLabel + ', ' + financingLabel + '.\\n\\nWenn Sie möchten, können wir danach einen kurzen Telefontermin mit unserem Team koordinieren.\\n\\nViele Grüße\\nNovaHaus Immobilien',\n    };\n  }\n\n  if (segment === 'not_qualified') {\n    return {\n      email_subject: 'Ihre Anfrage bei NovaHaus Immobilien',\n      email_draft: greeting + '\\n\\nvielen Dank für Ihr Interesse ' + objectLine + '. Für dieses Angebot empfehlen wir in der Regel mehr Eigenkapital, damit die Finanzierung realistisch geprüft werden kann.\\n\\nWir können Ihnen aber gern alternative Optionen oder Hinweise zur Finanzierungsvorbereitung senden.\\n\\nViele Grüße\\nNovaHaus Immobilien',\n    };\n  }\n\n  return {\n    email_subject: 'Weitere Informationen zu Ihrer Immobiliensuche',\n    email_draft: greeting + '\\n\\nvielen Dank für Ihre Anfrage ' + objectLine + '. Wir senden Ihnen gern weitere Informationen und halten Sie zu passenden Angeboten auf dem Laufenden.\\n\\nFalls Ihr Kaufzeitraum konkreter wird oder Sie Ihre Finanzierung klären möchten, antworten Sie einfach kurz auf diese E-Mail.\\n\\nViele Grüße\\nNovaHaus Immobilien',\n  };\n}\n\nconst createdAt = lead.created_at || lead.timestamp || new Date().toISOString();\nconst firstName = lead.first_name || lead.firstName || '';\nconst lastName = lead.last_name || lead.lastName || '';\nconst timeline = lead.purchase_timeline || lead.zeitrahmen || '';\nconst equity = lead.equity_bucket || lead.eigenkapital || '';\nconst financing = lead.financing_status || lead.finanzierung || '';\nconst underqualified = asBool(lead.underqualified);\nconst rawScore = lead.original_score || lead.lead_score || lead.score || lead.segment || 'cold';\nconst qualification = qualify({ leadScore: rawScore, timeline, equity, financing, underqualified });\nconst wohnungLabel = lead.wohnung_label || WOHNUNG_LABELS[lead.wohnung] || lead.wohnung || '';\nconst timelineLabel = lead.purchase_timeline_label || ZEITRAHMEN_LABELS[timeline] || timeline;\nconst equityLabel = lead.equity_bucket_label || EIGENKAPITAL_LABELS[equity] || equity;\nconst financingLabel = lead.financing_status_label || FINANZIERUNG_LABELS[financing] || financing;\nconst draft = lead.email_draft && lead.email_subject\n  ? { email_subject: lead.email_subject, email_draft: lead.email_draft }\n  : emailDraft({ firstName, segment: qualification.segment, wohnungLabel, timelineLabel, equityLabel, financingLabel });\n\nconst row = {\n  created_at: createdAt,\n  lead_id: lead.lead_id || '',\n  status: lead.status || qualification.status,\n  segment: qualification.segment,\n  score: qualification.segment,\n  next_best_action: lead.next_best_action || lead.next_action || qualification.nextAction,\n  handoff_required: (lead.handoff_required ?? qualification.handoffRequired) ? 'yes' : 'no',\n  handoff_reason: lead.handoff_reason || qualification.handoffReason,\n  name: lead.name || (firstName + ' ' + lastName).trim(),\n  first_name: firstName,\n  last_name: lastName,\n  email: lead.email || '',\n  phone: lead.phone || '',\n  wohnung: wohnungLabel,\n  purchase_timeline: timelineLabel,\n  equity_bucket: equityLabel,\n  financing_status: financingLabel,\n  underqualified: underqualified ? 'yes' : 'no',\n  consent_contact: asBool(lead.consent_contact ?? lead.consent) ? 'yes' : 'no',\n  consent_data_processing: asBool(lead.consent_data_processing ?? lead.consent) ? 'yes' : 'no',\n  utm_source: lead.utm_source || (lead.source && lead.source.utm_source) || '',\n  utm_medium: lead.utm_medium || (lead.source && lead.source.utm_medium) || '',\n  utm_campaign: lead.utm_campaign || (lead.source && lead.source.utm_campaign) || '',\n  utm_content: lead.utm_content || (lead.source && lead.source.utm_content) || '',\n  utm_term: lead.utm_term || (lead.source && lead.source.utm_term) || '',\n  priority: lead.priority || qualification.priority,\n  next_action: lead.next_action || lead.next_best_action || qualification.nextAction,\n  followup_due_at: lead.followup_due_at || addMinutes(createdAt, qualification.followupMinutes),\n  assigned_to: lead.assigned_to || qualification.assignedTo,\n  qualification_reason: lead.qualification_reason || qualification.qualificationReason,\n  lead_summary: lead.lead_summary || 'Objekt: ' + (wohnungLabel || 'nicht angegeben') + ' | Zeitrahmen: ' + (timelineLabel || 'nicht angegeben') + ' | Eigenkapital: ' + (equityLabel || 'nicht angegeben') + ' | Finanzierung: ' + (financingLabel || 'nicht angegeben'),\n  email_subject: draft.email_subject,\n  email_draft: draft.email_draft,\n};\n\nreturn [{ json: { ok: true, statusCode: 200, lead, row } }];"
+      },
+      "id": "a6dedc8a-227e-4c4a-98cf-b386f7d4f4ad",
+      "name": "Validate + Normalize Lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -580,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$json.ok}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "cfcff47a-6552-4d95-86e5-d040561b5f53",
+      "name": "Secret OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -340,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{$env.NOVAHAUS_LEADS_SHEET_ID}}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "={{$env.NOVAHAUS_LEADS_SHEET_TAB || 'Leads'}}"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "created_at": "={{$json.row.created_at}}",
+            "lead_id": "={{$json.row.lead_id}}",
+            "status": "={{$json.row.status}}",
+            "segment": "={{$json.row.segment}}",
+            "score": "={{$json.row.score}}",
+            "next_best_action": "={{$json.row.next_best_action}}",
+            "handoff_required": "={{$json.row.handoff_required}}",
+            "handoff_reason": "={{$json.row.handoff_reason}}",
+            "name": "={{$json.row.name}}",
+            "first_name": "={{$json.row.first_name}}",
+            "last_name": "={{$json.row.last_name}}",
+            "email": "={{$json.row.email}}",
+            "phone": "={{$json.row.phone}}",
+            "wohnung": "={{$json.row.wohnung}}",
+            "purchase_timeline": "={{$json.row.purchase_timeline}}",
+            "equity_bucket": "={{$json.row.equity_bucket}}",
+            "financing_status": "={{$json.row.financing_status}}",
+            "underqualified": "={{$json.row.underqualified}}",
+            "consent_contact": "={{$json.row.consent_contact}}",
+            "consent_data_processing": "={{$json.row.consent_data_processing}}",
+            "utm_source": "={{$json.row.utm_source}}",
+            "utm_medium": "={{$json.row.utm_medium}}",
+            "utm_campaign": "={{$json.row.utm_campaign}}",
+            "utm_content": "={{$json.row.utm_content}}",
+            "utm_term": "={{$json.row.utm_term}}",
+            "priority": "={{$json.row.priority}}",
+            "next_action": "={{$json.row.next_action}}",
+            "followup_due_at": "={{$json.row.followup_due_at}}",
+            "assigned_to": "={{$json.row.assigned_to}}",
+            "qualification_reason": "={{$json.row.qualification_reason}}",
+            "lead_summary": "={{$json.row.lead_summary}}",
+            "email_subject": "={{$json.row.email_subject}}",
+            "email_draft": "={{$json.row.email_draft}}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "ff962e7d-1285-4e6f-b850-f15348a807e1",
+      "name": "Append Lead to Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        -80,
+        -80
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REPLACE_WITH_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.segment}}",
+                    "rightValue": "hot",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "hot"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.segment}}",
+                    "rightValue": "warm",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "warm"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.segment}}",
+                    "rightValue": "cold",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "cold"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.segment}}",
+                    "rightValue": "not_qualified",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "not_qualified"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ed035410-296d-4660-9210-9d4dc8e1a251",
+      "name": "Route by Segment",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        180,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map((item) => ({\n  json: {\n    ...item.json,\n    workflow_path: \"hot_call_center\",\n    manager_task: \"Call-center: call within 15 minutes and confirm handoff\",\n  },\n}));"
+      },
+      "id": "a5b77648-cf7c-485a-a636-389a57d1b309",
+      "name": "Hot Lead Task Placeholder",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        -240
+      ],
+      "notes": "Replace this with Slack, Telegram, CRM task, or email notification for the call-center."
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map((item) => ({\n  json: {\n    ...item.json,\n    workflow_path: \"warm_ai_email_draft\",\n    manager_task: \"AI agent: prepare clarifying email and offer a call\",\n  },\n}));"
+      },
+      "id": "d2819717-56bf-4c1c-82bc-bbe9e48aa283",
+      "name": "Warm Lead Email Placeholder",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        -80
+      ],
+      "notes": "Replace this with AI email draft/send workflow."
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map((item) => ({\n  json: {\n    ...item.json,\n    workflow_path: \"cold_nurture\",\n    manager_task: \"AI agent: add to nurture follow-up\",\n  },\n}));"
+      },
+      "id": "c6f58a6f-39c7-45b6-8953-d7a68afe4d56",
+      "name": "Cold Lead Nurture Placeholder",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        80
+      ],
+      "notes": "Replace this with low-priority nurture flow."
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, lead_id: $json.lead_id, email_status: $json.email_status, approval_status: $json.approval_status, segment: $json.segment, priority: $json.priority, next_action: $json.next_action, workflow_path: $json.workflow_path, gmail_drafts_enabled: true } }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "d8e7a2dd-d8d0-47c6-bf11-fb4c1db5c4f7",
+      "name": "Respond OK",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1400,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: false, error: $json.error || \"invalid_request\" } }}",
+        "options": {
+          "responseCode": 401
+        }
+      },
+      "id": "b5d6f4f9-5838-46da-a584-db8902b3710d",
+      "name": "Respond Unauthorized",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map((item) => ({\n  json: {\n    ...item.json,\n    workflow_path: \"not_qualified_soft_filter\",\n    manager_task: \"AI agent: send soft rejection or financing options, no call-center handoff\",\n  },\n}));"
+      },
+      "id": "f1c6c0b2-1d4d-4d37-bd31-a92cba60607b",
+      "name": "Not Qualified Placeholder",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{$env.NOVAHAUS_LEADS_SHEET_ID}}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Email Queue"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "created_at": "={{$json.created_at}}",
+            "lead_id": "={{$json.lead_id}}",
+            "email_status": "draft_ready",
+            "approval_status": "needs_review",
+            "segment": "={{$json.segment}}",
+            "priority": "={{$json.priority}}",
+            "assigned_to": "={{$json.assigned_to}}",
+            "to_email": "={{$json.email}}",
+            "subject": "={{$json.email_subject}}",
+            "body": "={{$json.email_draft}}",
+            "send_after": "={{$json.followup_due_at}}",
+            "workflow_path": "={{$json.workflow_path}}",
+            "manager_task": "={{$json.manager_task}}",
+            "status": "={{$json.status}}",
+            "next_action": "={{$json.next_action || $json.next_best_action}}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "f53c4da4-991f-43ec-802b-710496f3ef76",
+      "name": "Append Email Queue Row",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        700,
+        -80
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "REPLACE_WITH_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": true,
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "a23877f9-21b7-45c0-a5d5-8919c6f53b6a",
+      "name": "Gmail Drafts Enabled?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        920,
+        -80
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "resource": "draft",
+        "operation": "create",
+        "subject": "={{$json.subject}}",
+        "emailType": "text",
+        "message": "={{$json.body}}",
+        "options": {
+          "sendTo": "={{$json.to_email}}"
+        }
+      },
+      "id": "b6f28a37-c04e-4d1c-8208-9f79f010ab56",
+      "name": "Create Gmail Draft",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1160,
+        -160
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_GMAIL_CREDENTIAL_ID",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Lead Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate + Normalize Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate + Normalize Lead": {
+      "main": [
+        [
+          {
+            "node": "Secret OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Secret OK?": {
+      "main": [
+        [
+          {
+            "node": "Append Lead to Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond Unauthorized",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Lead to Google Sheet": {
+      "main": [
+        [
+          {
+            "node": "Route by Segment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Segment": {
+      "main": [
+        [
+          {
+            "node": "Hot Lead Task Placeholder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Warm Lead Email Placeholder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Cold Lead Nurture Placeholder",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Not Qualified Placeholder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hot Lead Task Placeholder": {
+      "main": [
+        [
+          {
+            "node": "Append Email Queue Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Warm Lead Email Placeholder": {
+      "main": [
+        [
+          {
+            "node": "Append Email Queue Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cold Lead Nurture Placeholder": {
+      "main": [
+        [
+          {
+            "node": "Append Email Queue Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Not Qualified Placeholder": {
+      "main": [
+        [
+          {
+            "node": "Append Email Queue Row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append Email Queue Row": {
+      "main": [
+        [
+          {
+            "node": "Gmail Drafts Enabled?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail Drafts Enabled?": {
+      "main": [
+        [
+          {
+            "node": "Create Gmail Draft",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Gmail Draft": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 1,
+  "updatedAt": "2026-05-21T00:00:00.000Z",
+  "versionId": "novahaus-lead-collector-mvp"
+}
