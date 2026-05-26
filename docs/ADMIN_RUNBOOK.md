@@ -45,7 +45,17 @@ flowchart LR
 
 ## Vercel Deployment
 
-Current deployment mode is manual CLI deployment:
+Current deployment mode is GitHub auto-deploy:
+
+```text
+GitHub repo: https://github.com/QuiltyVal/novahaus-lead-quiz
+Production branch: main
+Vercel project: novahaus-lead-quiz
+```
+
+Every push to `main` should create a production deployment.
+
+Manual fallback:
 
 ```bash
 vercel --prod
@@ -66,27 +76,21 @@ FREE_LLM_FALLBACK_MODEL
 
 Never commit `.env.local`.
 
-## GitHub Auto-Deploy Setup
+## GitHub Auto-Deploy
 
-The Vercel project exists, but GitHub auto-deploy is not connected yet.
-
-Current blocker:
+The Vercel project is connected to:
 
 ```text
-Vercel Git connection cannot access private repo ValQuilty/srmquiz.
+QuiltyVal/novahaus-lead-quiz
 ```
 
-Fix once in the Vercel dashboard:
+If auto-deploy stops working:
 
 1. Open the Vercel project `novahaus-lead-quiz`.
 2. Go to `Settings -> Git`.
-3. Connect GitHub.
-4. Install or configure the Vercel GitHub app for the GitHub account that owns `ValQuilty/srmquiz`.
-5. Grant repository access to `ValQuilty/srmquiz`.
-6. Set production branch to `main`.
-7. Merge the draft PR only after review.
-
-After this, future merges to `main` should deploy automatically.
+3. Confirm repository is `QuiltyVal/novahaus-lead-quiz`.
+4. Confirm production branch is `main`.
+5. Confirm GitHub Actions/secrets are not required for normal Vercel Git deploys.
 
 ## DNS
 
