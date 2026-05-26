@@ -160,12 +160,6 @@ a {
   );
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .hero-video {
-    display: none;
-  }
-}
-
 .hero-content {
   position: relative;
   z-index: 1;
