@@ -21,6 +21,26 @@ const packages = [
   ['Monthly Ops', 'laufend', 'Monitoring, Prompt-Optimierung, neue Segmente, Reporting und Funnel-Verbesserungen.'],
 ]
 
+const contactEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'hello@valquilty.com'
+const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || ''
+const linkedinUrl = process.env.NEXT_PUBLIC_LINKEDIN_URL || ''
+const emailSubject = 'Demo-Anfrage: Lead-to-Call System fuer Immobilien'
+const emailBody = [
+  'Hi,',
+  '',
+  'ich habe die NovaHaus Lead-to-Call Demo gesehen und wuerde gern kurz besprechen, wie so ein Workflow fuer unsere Immobilien-Leads aussehen koennte.',
+  '',
+  'Firma:',
+  'Lead-Quellen:',
+  'CRM / Tooling:',
+  'Lead-Volumen pro Monat:',
+  '',
+  'Viele Gruesse',
+].join('\n')
+const mailtoUrl = `mailto:${contactEmail}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`
+const primaryContactUrl = calendlyUrl || mailtoUrl
+const primaryContactLabel = calendlyUrl ? 'Demo-Call buchen' : 'Demo-Anfrage senden'
+
 export const metadata = {
   title: 'Lead-to-Call System fuer Immobilienunternehmen | NovaHaus Demo',
   description:
@@ -52,6 +72,7 @@ export default function SystemPage() {
           <div className="system-nav-links">
             <a href="/">Live Demo</a>
             <a href="/quiz">Quiz testen</a>
+            <a href="#kontakt">Kontakt</a>
           </div>
         </div>
 
@@ -187,17 +208,51 @@ export default function SystemPage() {
       </section>
 
       <section className="system-section system-final">
-        <div className="container">
-          <p className="system-kicker">Naechster Schritt</p>
-          <h2>Fuer eine Immobilienfirma wird daraus ein eigener Funnel mit eigenem Objekt, eigener Logik und eigenem CRM.</h2>
-          <div className="system-final-actions">
-            <a href="/" className="system-btn system-btn-primary">
-              Demo teilen
-            </a>
-            <a href="/quiz" className="system-btn system-btn-secondary">
-              Testlead durchspielen
-            </a>
+        <div className="container system-contact-inner" id="kontakt">
+          <div className="system-contact-copy">
+            <p className="system-kicker">Kontakt</p>
+            <h2>Fuer eine Immobilienfirma wird daraus ein eigener Funnel mit eigenem Objekt, eigener Logik und eigenem CRM.</h2>
+            <p>
+              Im ersten Call klaeren wir, welche Leadquellen, Qualifikationsregeln,
+              CRM-Tools und Follow-up-Prozesse fuer einen Pilot sinnvoll sind.
+            </p>
+            <div className="system-final-actions">
+              <a
+                href={primaryContactUrl}
+                className="system-btn system-btn-primary"
+                target={calendlyUrl ? '_blank' : undefined}
+                rel={calendlyUrl ? 'noreferrer' : undefined}
+              >
+                {primaryContactLabel}
+              </a>
+              <a href="/" className="system-btn system-btn-secondary">
+                Live Demo teilen
+              </a>
+              {linkedinUrl && (
+                <a
+                  href={linkedinUrl}
+                  className="system-btn system-btn-secondary"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  LinkedIn
+                </a>
+              )}
+            </div>
           </div>
+
+          <aside className="system-contact-card" aria-label="Kontaktinformationen">
+            <h3>Was im Erstgespraech geklaert wird</h3>
+            <ul>
+              <li>Leadquellen und aktuelles Antworttempo</li>
+              <li>Qualifikationsregeln fuer Budget und Eigenkapital</li>
+              <li>CRM, Google Sheets oder bestehende Tools</li>
+              <li>Draft-only Follow-up oder spaetere Auto-Send-Regeln</li>
+            </ul>
+            <a href={mailtoUrl} className="system-contact-email">
+              {contactEmail}
+            </a>
+          </aside>
         </div>
       </section>
     </main>

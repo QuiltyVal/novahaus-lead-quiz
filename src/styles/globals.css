@@ -2395,18 +2395,78 @@ a {
 }
 
 .system-final {
-  text-align: center;
   background: #111820;
   color: #fff;
 }
 
 .system-final h2 {
   color: #fff;
-  margin: 0 auto;
+}
+
+.system-contact-inner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 42px;
+  align-items: center;
+}
+
+.system-contact-copy > p:not(.system-kicker) {
+  max-width: 720px;
+  margin-top: 18px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 18px;
+  line-height: 1.6;
 }
 
 .system-final-actions {
-  justify-content: center;
+  justify-content: flex-start;
+}
+
+.system-contact-card {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.07);
+  padding: 28px;
+}
+
+.system-contact-card h3 {
+  color: #fff;
+  font-size: 20px;
+  line-height: 1.2;
+  margin-bottom: 18px;
+}
+
+.system-contact-card ul {
+  list-style: none;
+  display: grid;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.system-contact-card li {
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.45;
+  padding-left: 22px;
+  position: relative;
+}
+
+.system-contact-card li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.65em;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #be4a74;
+}
+
+.system-contact-email {
+  display: inline-flex;
+  color: #fff;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.45);
+  padding-bottom: 2px;
 }
 
 @media (max-width: 960px) {
@@ -2417,7 +2477,8 @@ a {
 
   .system-hero-inner,
   .system-split,
-  .system-demo-inner {
+  .system-demo-inner,
+  .system-contact-inner {
     grid-template-columns: 1fr;
   }
 

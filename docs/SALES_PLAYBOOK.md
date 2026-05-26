@@ -142,3 +142,16 @@ If useful, I can show how the same workflow would look for one of your current p
 Best,
 [Your name]
 ```
+
+## Contact CTA Configuration
+
+The `/system` page uses public env vars for contact links:
+
+```text
+NEXT_PUBLIC_CONTACT_EMAIL=hello@valquilty.com
+NEXT_PUBLIC_CALENDLY_URL=
+NEXT_PUBLIC_LINKEDIN_URL=
+```
+
+If `NEXT_PUBLIC_CALENDLY_URL` is set, the primary CTA becomes a booking link.
+If it is empty, the primary CTA opens a prefilled email.
