@@ -21,9 +21,11 @@ const packages = [
   ['Monthly Ops', 'laufend', 'Monitoring, Prompt-Optimierung, neue Segmente, Reporting und Funnel-Verbesserungen.'],
 ]
 
-const contactEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'hello@valquilty.com'
+const contactEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'me@valquilty.com'
 const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || ''
-const linkedinUrl = process.env.NEXT_PUBLIC_LINKEDIN_URL || ''
+const linkedinUrl =
+  process.env.NEXT_PUBLIC_LINKEDIN_URL ||
+  'https://www.linkedin.com/in/valentyn-havrychenko/'
 const emailSubject = 'Demo-Anfrage: Lead-to-Call System fuer Immobilien'
 const emailBody = [
   'Hi,',

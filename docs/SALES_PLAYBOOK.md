@@ -148,9 +148,9 @@ Best,
 The `/system` page uses public env vars for contact links:
 
 ```text
-NEXT_PUBLIC_CONTACT_EMAIL=hello@valquilty.com
+NEXT_PUBLIC_CONTACT_EMAIL=me@valquilty.com
 NEXT_PUBLIC_CALENDLY_URL=
-NEXT_PUBLIC_LINKEDIN_URL=
+NEXT_PUBLIC_LINKEDIN_URL=https://www.linkedin.com/in/valentyn-havrychenko/
 ```
 
 If `NEXT_PUBLIC_CALENDLY_URL` is set, the primary CTA becomes a booking link.
