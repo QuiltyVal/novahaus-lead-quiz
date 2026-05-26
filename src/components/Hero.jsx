@@ -17,7 +17,20 @@ export default function Hero() {
 
   return (
     <section className="hero" id="hero">
-      <div className="hero-bg" role="img" aria-label="NovaHaus Wohnquartier Leipzig" />
+      <div className="hero-bg" role="img" aria-label="NovaHaus Wohnquartier Leipzig">
+        <video
+          className="hero-video"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          poster="/background.png"
+          aria-hidden="true"
+        >
+          <source src="/media/novahaus-hero.mp4" type="video/mp4" />
+        </video>
+      </div>
       <div className="hero-content">
         <div className="hero-eyebrow">💡 Warum noch Miete zahlen?</div>
         <h1>Kaufen statt Mieten — Ihre Eigentumswohnung in Leipzig</h1>
