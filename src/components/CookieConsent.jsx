@@ -21,11 +21,24 @@ export function hasMarketingConsent() {
 }
 
 /**
- * Removes all Meta/Facebook cookies so the pixel is fully disabled.
+ * Removes common marketing cookies so trackers are fully disabled.
  */
 function clearTrackingCookies() {
-  const fbCookies = ['_fbp', '_fbc', 'fr', 'datr', 'sb']
-  fbCookies.forEach((name) => {
+  const trackingCookies = [
+    '_fbp',
+    '_fbc',
+    'fr',
+    'datr',
+    'sb',
+    '_ga',
+    '_gid',
+    '_gat',
+    '_gcl_au',
+    '__gads',
+    '__gpi',
+  ]
+
+  trackingCookies.forEach((name) => {
     document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${window.location.hostname}`
     document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.${window.location.hostname}`
     document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`
@@ -126,9 +139,10 @@ export default function CookieConsent() {
                       <span className="cookie-optional">Optional</span>
                     </div>
                     <p>
-                      Meta Pixel &amp; Conversions API — werden verwendet, um die Effektivität
-                      unserer Werbung zu messen und Ihnen relevante Inhalte anzuzeigen.
-                      Diese Daten werden an Meta (Facebook) übermittelt.
+                      Google Tag Manager, Meta Pixel &amp; Conversions API werden verwendet, um
+                      die Effektivität unserer Werbung zu messen und Ihnen relevante Inhalte
+                      anzuzeigen. Diese Daten können an Google und Meta (Facebook) übermittelt
+                      werden.
                     </p>
                   </div>
                 </div>

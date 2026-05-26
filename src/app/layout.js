@@ -1,5 +1,6 @@
 import SvgDefs from '@/components/SvgDefs'
 import CookieConsent from '@/components/CookieConsent'
+import GoogleTagManagerLoader from '@/components/GoogleTagManagerLoader'
 import MetaPixelLoader from '@/components/MetaPixelLoader'
 import '@/styles/globals.css'
 
@@ -32,7 +33,8 @@ export default function RootLayout({ children }) {
 
         {children}
 
-        {/* Meta Pixel — loads ONLY after cookie consent */}
+        {/* Marketing trackers load only after cookie consent */}
+        <GoogleTagManagerLoader />
         <MetaPixelLoader />
 
         {/* GDPR Cookie Consent Banner */}

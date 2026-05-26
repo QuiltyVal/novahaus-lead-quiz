@@ -1,5 +1,5 @@
 /**
- * Tracking utilities — Meta Pixel (browser) + CAPI (server)
+ * Tracking utilities — GTM dataLayer + Meta Pixel (browser) + CAPI (server)
  *
  * Uses a shared event_id for deduplication between
  * browser-side Pixel events and server-side CAPI events.
@@ -40,6 +40,19 @@ function firePixelEvent(eventName, params = {}, eventId = null) {
   if (typeof window === 'undefined' || typeof window.fbq === 'undefined') return
   const options = eventId ? { eventID: eventId } : {}
   window.fbq('track', eventName, params, options)
+}
+
+/* ============================================
+   Google Tag Manager — browser-side
+   ============================================ */
+function pushDataLayerEvent(eventName, params = {}, eventId = null) {
+  if (typeof window === 'undefined') return
+  window.dataLayer = window.dataLayer || []
+  window.dataLayer.push({
+    event: eventName,
+    event_id: eventId || undefined,
+    ...params,
+  })
 }
 
 /* ============================================
@@ -92,8 +105,10 @@ export function trackEvent(eventName, params = {}, userData = {}) {
   }
 
   const eventId = generateEventId()
-  // 1. Browser-side Pixel
+  // 1. GTM event for analytics/ad tags configured in GTM
+  pushDataLayerEvent(eventName, params, eventId)
+  // 2. Browser-side Pixel
   firePixelEvent(eventName, params, eventId)
-  // 2. Server-side CAPI
+  // 3. Server-side CAPI
   sendCAPIEvent(eventName, { ...userData, custom: params }, eventId)
 }

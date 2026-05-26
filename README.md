@@ -47,6 +47,19 @@ N8N_LEAD_WEBHOOK_SECRET=shared-secret
 
 The same secret must be configured on the n8n instance.
 
+## Marketing Trackers
+
+Tracking slots are built in but disabled until env variables are set:
+
+```bash
+NEXT_PUBLIC_GTM_ID=GTM-XXXXXXX
+NEXT_PUBLIC_META_PIXEL_ID=your-meta-pixel-id
+META_ACCESS_TOKEN=your-meta-conversions-api-token
+META_TEST_EVENT_CODE=
+```
+
+`NEXT_PUBLIC_GTM_ID` and `NEXT_PUBLIC_META_PIXEL_ID` are public browser IDs. Never put API keys in `NEXT_PUBLIC_*` variables. Google Tag Manager and Meta Pixel load only after the visitor accepts marketing cookies. Meta Conversions API runs server-side only when `META_ACCESS_TOKEN` is configured.
+
 ## Demo Seed Leads
 
 Run four portfolio demo scenarios:

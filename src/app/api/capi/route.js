@@ -4,7 +4,7 @@ import crypto from 'crypto'
 /* ============================================
    CONFIG — from env variables
    ============================================ */
-const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || '915201874369045'
+const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || ''
 const ACCESS_TOKEN = process.env.META_ACCESS_TOKEN || ''
 const TEST_EVENT_CODE = process.env.META_TEST_EVENT_CODE || null
 const API_VERSION = 'v21.0'
@@ -85,9 +85,19 @@ export async function POST(request) {
       }
     })
 
+    // Skip sending if Meta is not configured.
+    if (!PIXEL_ID) {
+      console.log('CAPI: No pixel ID configured, event logged but not sent to Meta.')
+      return NextResponse.json({
+        success: true,
+        event_id: eventPayload.event_id,
+        note: 'No Meta pixel ID, event not forwarded to Meta',
+      })
+    }
+
     // Skip sending if no access token configured
     if (!ACCESS_TOKEN || ACCESS_TOKEN === 'YOUR_CONVERSIONS_API_ACCESS_TOKEN') {
-      console.log('⚠️  CAPI: No access token configured — event logged but not sent to Meta.')
+      console.log('CAPI: No access token configured, event logged but not sent to Meta.')
       console.log('    Event:', event_name, '| ID:', eventPayload.event_id)
       return NextResponse.json({
         success: true,

@@ -72,9 +72,30 @@ OPENROUTER_BASE_URL
 OPENROUTER_APP_NAME
 FREE_LLM_MODELS_URL
 FREE_LLM_FALLBACK_MODEL
+NEXT_PUBLIC_GTM_ID
+NEXT_PUBLIC_META_PIXEL_ID
+META_ACCESS_TOKEN
+META_TEST_EVENT_CODE
 ```
 
 Never commit `.env.local`.
+
+## Marketing Trackers
+
+The site has consent-gated slots for:
+
+| Tracker | Env var | Where it runs |
+| --- | --- | --- |
+| Google Tag Manager | `NEXT_PUBLIC_GTM_ID` | Browser, after marketing consent |
+| Meta Pixel | `NEXT_PUBLIC_META_PIXEL_ID` | Browser, after marketing consent |
+| Meta Conversions API | `META_ACCESS_TOKEN` | Server-side `/api/capi`, after consent-triggered events |
+
+To enable trackers:
+
+1. Add the env vars in Vercel `Settings -> Environment Variables`.
+2. Keep secrets out of `NEXT_PUBLIC_*`; those values are visible in the browser.
+3. Redeploy production after changing env vars.
+4. Test with one quiz submission and verify GTM Preview / Meta Events Manager.
 
 ## GitHub Auto-Deploy
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 
-const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || '915201874369045'
+const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || ''
 
 /**
  * Loads the Meta Pixel script ONLY after the user grants marketing consent.
@@ -15,7 +15,6 @@ export default function MetaPixelLoader() {
 
   useEffect(() => {
     if (!PIXEL_ID) {
-      console.warn('⚠️ Meta Pixel: No PIXEL_ID configured')
       return
     }
 
@@ -44,7 +43,7 @@ export default function MetaPixelLoader() {
       window.fbq('init', PIXEL_ID)
       window.fbq('track', 'PageView')
       setLoaded(true)
-      console.log(`✅ Meta Pixel loaded — ID: ${PIXEL_ID}`)
+      console.log(`Meta Pixel loaded: ${PIXEL_ID}`)
     }
 
     // Check if consent was already given (returning visitor)
