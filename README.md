@@ -35,6 +35,17 @@ B2B sales landing page:
 /system
 ```
 
+Demo-safe recording mode:
+
+```text
+/demo
+```
+
+Use `/demo` when recording portfolio videos or presenting to prospects without
+showing private n8n, Google, Gmail, or browser account data. The quiz supports
+scenario links like `/quiz?demo=hot`, pre-fills fake contact details, tags the
+lead as demo traffic, and links the thank-you page to `/demo/ops`.
+
 ## Local Development
 
 ```bash

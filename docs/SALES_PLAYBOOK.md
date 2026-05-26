@@ -51,6 +51,40 @@ n8n execution -> Google Sheets row -> Email Queue row -> Gmail draft
 AI creates drafts, not automatic sends. The human reviews before sending.
 ```
 
+## Demo-Safe Recording Flow
+
+Use this for videos and first client calls, so no private accounts or real lead
+data appear on screen.
+
+1. Open:
+
+```text
+https://novahaus.valquilty.com/demo
+```
+
+2. Click `Hot Lead aufnehmen`.
+
+3. Walk through the quiz using the visible demo scenario. The contact details
+are fake and use reserved `example.com` addresses.
+
+4. After submission, open the backend console from the thank-you page:
+
+```text
+https://novahaus.valquilty.com/demo/ops?scenario=hot
+```
+
+5. Explain that the console is the privacy-safe recording view. In a private
+sales call you can also open the real n8n execution, Google Sheet, and Gmail
+draft if needed.
+
+Recommended talk track:
+
+```text
+This is a demo-safe run. The real workflow can write to n8n, Google Sheets,
+CRM, and Gmail drafts, but for public video I show the same operational fields
+without exposing private accounts.
+```
+
 ## What To Ask A Prospect
 
 - How many leads do you get per month?

@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { trackEvent } from '@/lib/tracking'
 import { calculateLeadScore } from '@/lib/leadScoring'
+import { DEMO_SCENARIOS, getDemoScenario } from '@/lib/demoScenarios'
 import {
   IconGarden,
   IconSun,
@@ -33,6 +34,22 @@ const COUNTRIES = [
 ]
 
 const COUNTRY_BY_CODE = Object.fromEntries(COUNTRIES.map(c => [c.code, c]))
+
+function parsePhoneValue(phoneValue) {
+  const value = String(phoneValue || '').trim()
+  if (!value) return null
+
+  const match = [...COUNTRIES]
+    .sort((a, b) => b.dial.length - a.dial.length)
+    .find((candidate) => value.startsWith(candidate.dial))
+
+  if (!match) return null
+
+  return {
+    country: match,
+    localNumber: value.slice(match.dial.length).trim(),
+  }
+}
 
 function PhoneInput({ value, onChange, hasError, onClearError }) {
   const [country, setCountry] = useState(COUNTRIES[0]) // default DE
@@ -69,6 +86,15 @@ function PhoneInput({ value, onChange, hasError, onClearError }) {
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
+
+  /* Demo mode can provide a prefilled full phone value. */
+  useEffect(() => {
+    if (!value || localNumber) return
+    const parsed = parsePhoneValue(value)
+    if (!parsed) return
+    setCountry(parsed.country)
+    setLocalNumber(parsed.localNumber)
+  }, [value, localNumber])
 
   /* Sync full phone value to parent */
   useEffect(() => {
@@ -230,6 +256,9 @@ export default function Quiz() {
   /* Check if a wohnung was pre-selected via URL (e.g. from FloorPlans click) */
   const preselected = searchParams.get('wohnung')
   const isPreselected = preselected && VALID_WOHNUNG.includes(preselected)
+  const demoParam = searchParams.get('demo')
+  const demoScenario = DEMO_SCENARIOS[demoParam] ? getDemoScenario(demoParam) : null
+  const isDemoMode = Boolean(demoScenario)
 
   const [step, setStep] = useState(isPreselected ? 2 : 1)
   const [answers, setAnswers] = useState({
@@ -239,10 +268,10 @@ export default function Quiz() {
     finanzierung: null,
   })
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
+    firstName: demoScenario?.firstName || '',
+    lastName: demoScenario?.lastName || '',
+    email: demoScenario?.email || '',
+    phone: demoScenario?.phone || '',
     consent: false,
   })
   const [errors, setErrors] = useState({})
@@ -328,12 +357,25 @@ export default function Quiz() {
 
     const leadScore = calculateLeadScore(answers)
 
+    const source = getUTMParams()
+    const demoSource = isDemoMode
+      ? {
+          utm_source: source.utm_source || 'portfolio_demo',
+          utm_medium: source.utm_medium || 'recording',
+          utm_campaign: source.utm_campaign || `novahaus_demo_${demoScenario.key}`,
+          utm_content: source.utm_content || demoScenario.key,
+          utm_term: source.utm_term || 'demo_safe',
+        }
+      : source
+
     const leadData = {
       ...answers,
       ...formData,
       lead_score: leadScore,
       underqualified,
-      source: getUTMParams(),
+      source: demoSource,
+      demo_mode: isDemoMode,
+      demo_scenario: demoScenario?.key || '',
       timestamp: new Date().toISOString(),
     }
 
@@ -389,6 +431,14 @@ export default function Quiz() {
     <>
       <section className="quiz-section" id="quiz">
         <div className="quiz-container">
+          {isDemoMode && (
+            <div className="demo-mode-banner">
+              <span>Demo-Modus</span>
+              <strong>{demoScenario.label}</strong>
+              <p>Nur fiktive Daten fuer Aufnahme, Portfolio und Kundendemo.</p>
+            </div>
+          )}
+
           {/* Progress Bar — at the top */}
           <div className="progress-wrapper">
             <div className="progress-label">
