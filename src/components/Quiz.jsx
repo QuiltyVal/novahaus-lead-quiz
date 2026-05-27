@@ -262,10 +262,10 @@ export default function Quiz() {
 
   const [step, setStep] = useState(isPreselected ? 2 : 1)
   const [answers, setAnswers] = useState({
-    wohnung: isPreselected ? preselected : null,
-    zeitrahmen: null,
-    eigenkapital: null,
-    finanzierung: null,
+    wohnung: demoScenario?.wohnung || (isPreselected ? preselected : null),
+    zeitrahmen: demoScenario?.zeitrahmen || null,
+    eigenkapital: demoScenario?.eigenkapital || null,
+    finanzierung: demoScenario?.finanzierung || null,
   })
   const [formData, setFormData] = useState({
     firstName: demoScenario?.firstName || '',
@@ -368,6 +368,8 @@ export default function Quiz() {
         }
       : source
 
+    const resolvedDemoScenario = isDemoMode ? leadScore : ''
+
     const leadData = {
       ...answers,
       ...formData,
@@ -375,7 +377,7 @@ export default function Quiz() {
       underqualified,
       source: demoSource,
       demo_mode: isDemoMode,
-      demo_scenario: demoScenario?.key || '',
+      demo_scenario: resolvedDemoScenario,
       timestamp: new Date().toISOString(),
     }
 
@@ -435,7 +437,10 @@ export default function Quiz() {
             <div className="demo-mode-banner">
               <span>Demo-Modus</span>
               <strong>{demoScenario.label}</strong>
-              <p>Nur fiktive Daten fuer Aufnahme, Portfolio und Kundendemo.</p>
+              <p>
+                Der passende Demo-Pfad ist vorausgewaehlt. Klicke die markierten
+                Antworten durch; danach zeigt die Backend-Konsole den E-Mail-Draft.
+              </p>
             </div>
           )}
 
