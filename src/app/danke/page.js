@@ -70,8 +70,9 @@ export default function DankePage() {
             <div className="thankyou-demo-box">
               <strong>Demo-Modus erkannt</strong>
               <p>
-                Der Fake Lead wurde abgesendet. Fuer die Aufnahme kannst du jetzt
-                die Backend-Konsole mit Routing, Sheet-Row und Gmail-Draft zeigen.
+                Der Fake Lead wurde lokal simuliert. Fuer die Aufnahme kannst du
+                jetzt die Backend-Konsole mit Routing, Sheet-Row und Gmail-Draft
+                zeigen.
               </p>
               <a href={`/demo/ops?scenario=${demoScenario}`}>
                 Backend-Konsole oeffnen

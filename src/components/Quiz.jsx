@@ -408,15 +408,17 @@ export default function Quiz() {
       sessionStorage.setItem('novahaus_lead', JSON.stringify(leadData))
     } catch {}
 
-    // ── Send lead to backend (Google Sheets + Email) ──
-    try {
-      await fetch('/api/lead', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(leadData),
-      })
-    } catch (err) {
-      console.warn('Lead API error (non-blocking):', err)
+    // Demo-safe runs are for recording and do not need to wait for n8n/Gmail.
+    if (!isDemoMode) {
+      try {
+        await fetch('/api/lead', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(leadData),
+        })
+      } catch (err) {
+        console.warn('Lead API error (non-blocking):', err)
+      }
     }
 
     try {
