@@ -28,7 +28,7 @@ export default function Hero() {
           poster="/background.png"
           aria-hidden="true"
         >
-          <source src="/media/novahaus-hero.mp4" type="video/mp4" />
+          <source src="/media/novahaus-home-hero.mp4" type="video/mp4" />
         </video>
       </div>
       <div className="hero-content">
