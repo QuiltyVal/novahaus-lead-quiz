@@ -440,7 +440,7 @@ export default function Quiz() {
               <span>Demo-Modus</span>
               <strong>{demoScenario.label}</strong>
               <p>
-                Der passende Demo-Pfad ist vorausgewaehlt. Klicke die markierten
+                Der passende Demo-Pfad ist vorausgewählt. Klicke die markierten
                 Antworten durch; danach zeigt die Backend-Konsole den E-Mail-Draft.
               </p>
             </div>

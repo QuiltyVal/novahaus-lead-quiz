@@ -3,7 +3,7 @@ import { DEMO_SCENARIO_ORDER, getDemoScenario } from '@/lib/demoScenarios'
 export const metadata = {
   title: 'Demo-Regie | NovaHaus Lead-to-Call',
   description:
-    'Sicherer Aufnahmemodus fuer die NovaHaus Lead-to-Call Demo mit fiktiven Leads und Backend-Konsole.',
+    'Sicherer Aufnahmemodus für die NovaHaus Lead-to-Call Demo mit fiktiven Leads und Backend-Konsole.',
 }
 
 function quizUrl(key) {
@@ -42,7 +42,7 @@ export default function DemoPage() {
           <p className="system-eyebrow">Demo-safe recording mode</p>
           <h1>Zeige den kompletten Lead-to-Call Ablauf ohne echte Kundendaten.</h1>
           <p>
-            Diese Seite ist fuer Videoaufnahmen und Kundendemos gedacht:
+            Diese Seite ist für Videoaufnahmen und Kundendemos gedacht:
             fiktiver Lead, klares Szenario, danach eine saubere Backend-Konsole
             mit Sheet-Row, Routing und Gmail-Draft.
           </p>
@@ -61,7 +61,7 @@ export default function DemoPage() {
         <div className="container">
           <div className="system-section-head">
             <p className="system-kicker">Szenarien</p>
-            <h2>Vier Lead-Typen fuer Demo und Verkaufsgespraech.</h2>
+            <h2>Vier Lead-Typen für Demo und Verkaufsgespräch.</h2>
           </div>
 
           <div className="demo-scenario-grid">
@@ -73,7 +73,7 @@ export default function DemoPage() {
                 </div>
                 <h3>{scenario.badge}</h3>
                 <p>
-                  {scenario.firstName} {scenario.lastName} interessiert sich fuer{' '}
+                  {scenario.firstName} {scenario.lastName} interessiert sich für{' '}
                   {scenario.wohnungLabel}. Segment: {scenario.segment}.
                 </p>
                 <dl>
@@ -86,7 +86,7 @@ export default function DemoPage() {
                     <dd>{scenario.zeitrahmenLabel}</dd>
                   </div>
                   <div>
-                    <dt>Naechster Schritt</dt>
+                    <dt>Nächster Schritt</dt>
                     <dd>{scenario.nextAction}</dd>
                   </div>
                 </dl>
@@ -107,11 +107,11 @@ export default function DemoPage() {
             <h2>Was im Video gezeigt wird.</h2>
           </div>
           <ol className="demo-recording-list">
-            <li>Landingpage oeffnen und kurz erklaeren: Immobilien-Lead-Quiz.</li>
+            <li>Landingpage öffnen und kurz erklären: Immobilien-Lead-Quiz.</li>
             <li>Hot-Lead-Szenario im Demo-Modus durchklicken.</li>
             <li>Absenden: Fake Lead wird als Demo markiert.</li>
             <li>Backend-Konsole zeigen: n8n-Schritte, Sheet-Row, Gmail-Draft.</li>
-            <li>Mit der B2B-Seite abschliessen: was eine Firma bekommt.</li>
+            <li>Mit der B2B-Seite abschließen: was eine Firma bekommt.</li>
           </ol>
         </div>
       </section>

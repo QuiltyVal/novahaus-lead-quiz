@@ -3,17 +3,17 @@ import { getDemoScenario } from '@/lib/demoScenarios'
 export const metadata = {
   title: 'Demo Backend-Konsole | NovaHaus Lead-to-Call',
   description:
-    'Demo-safe Backend-Ansicht mit Workflow, Sheet-Zeile und Gmail-Draft fuer NovaHaus.',
+    'Demo-safe Backend-Ansicht mit Workflow, Sheet-Zeile und Gmail-Draft für NovaHaus.',
 }
 
 const workflowNodes = [
   ['Lead Webhook', 'POST empfangen'],
   ['Validate + Normalize', 'Daten bereinigen'],
-  ['Secret OK?', 'Quelle pruefen'],
+  ['Secret OK?', 'Quelle prüfen'],
   ['Append Lead to Sheet', 'CRM-Zeile schreiben'],
   ['Route by Segment', 'Hot/Warm/Cold entscheiden'],
   ['Create Gmail Draft', 'Antwort vorbereiten'],
-  ['Respond OK', 'Website bestaetigen'],
+  ['Respond OK', 'Website bestätigen'],
 ]
 
 function sheetRows(scenario) {
@@ -44,7 +44,7 @@ export default function DemoOpsPage({ searchParams }) {
             <p className="system-kicker">Demo Backend-Konsole</p>
             <h1>{scenario.label}: Lead wurde verarbeitet.</h1>
             <p>
-              Diese Ansicht ist fuer Aufnahmen gebaut. Sie zeigt denselben
+              Diese Ansicht ist für Aufnahmen gebaut. Sie zeigt denselben
               operativen Ablauf wie n8n, Google Sheets und Gmail Drafts, aber
               ohne private Accounts oder echte Kundendaten.
             </p>
