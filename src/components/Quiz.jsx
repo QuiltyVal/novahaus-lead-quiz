@@ -278,7 +278,12 @@ export default function Quiz() {
   const [showModal, setShowModal] = useState(false)
   const [underqualified, setUnderqualified] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [submittedInstantly, setSubmittedInstantly] = useState(false)
   const [animKey, setAnimKey] = useState(0)
+
+  useEffect(() => {
+    router.prefetch('/danke')
+  }, [router])
 
   /* ---------- Navigation ---------- */
   const goToStep = useCallback((newStep) => {
@@ -348,6 +353,28 @@ export default function Quiz() {
     return Object.keys(errs).length === 0
   }
 
+  const sendLeadInBackground = (leadData) => {
+    const payload = JSON.stringify(leadData)
+
+    try {
+      if (navigator.sendBeacon) {
+        const blob = new Blob([payload], { type: 'application/json' })
+        if (navigator.sendBeacon('/api/lead?background=1', blob)) return
+      }
+    } catch (err) {
+      console.warn('Lead beacon failed, falling back to keepalive fetch:', err)
+    }
+
+    fetch('/api/lead?background=1', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload,
+      keepalive: true,
+    }).catch((err) => {
+      console.warn('Lead API background error:', err)
+    })
+  }
+
   /* ---------- Submit ---------- */
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -408,28 +435,35 @@ export default function Quiz() {
       sessionStorage.setItem('novahaus_lead', JSON.stringify(leadData))
     } catch {}
 
-    // Demo-safe runs are for recording and do not need to wait for n8n/Gmail.
+    setSubmittedInstantly(true)
+
+    // Demo-safe runs are for recording and do not call the real backend.
+    // Live runs queue the backend request while the user already sees the thank-you state.
     if (!isDemoMode) {
-      try {
-        await fetch('/api/lead', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(leadData),
-        })
-      } catch (err) {
-        console.warn('Lead API error (non-blocking):', err)
-      }
+      sendLeadInBackground(leadData)
     }
 
-    try {
-      await router.push('/danke')
-    } catch {
-      setSubmitting(false)
-    }
+    setTimeout(() => {
+      router.push('/danke')
+    }, 1200)
   }
 
   /* ---------- Progress ---------- */
   const pct = Math.round((step / TOTAL_STEPS) * 100)
+
+  if (submittedInstantly) {
+    return (
+      <section className="quiz-section" id="quiz">
+        <div className="thankyou-wrapper quiz-thankyou-inline">
+          <div className="thankyou-inner">
+            <div className="thankyou-checkmark">✓</div>
+            <h1>Vielen Dank für Ihre Anfrage!</h1>
+            <p className="sub">Ihre Angaben wurden angenommen. Der nächste Schritt wird vorbereitet.</p>
+          </div>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <>

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { waitUntil } from '@vercel/functions'
 import { randomUUID } from 'crypto'
 import { google } from 'googleapis'
 import nodemailer from 'nodemailer'
@@ -756,27 +757,15 @@ async function sendEmailNotification(leadData) {
 /* ============================================
    POST /api/lead
    ============================================ */
-export async function POST(request) {
-  try {
-    const body = await request.json()
-    const forwardedFor = request.headers.get('x-forwarded-for')
-    const clientIp = forwardedFor?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || ''
-    const userAgent = request.headers.get('user-agent') || ''
+async function processLead(body, requestMeta = {}) {
+  const { clientIp = '', userAgent = '' } = requestMeta
 
-    const {
-      firstName,
-      lastName,
-      email,
-      phone,
-      wohnung,
-      zeitrahmen,
-      eigenkapital,
-      finanzierung,
-      lead_score,
-      underqualified,
-      source = {},
-      timestamp,
-    } = body
+  const {
+    firstName,
+    lastName,
+    email,
+    lead_score,
+  } = body
 
     const leadRecord = await attachAIEmailDraft(buildLeadRecord(body, { clientIp, userAgent }))
     let delivery = 'none'
@@ -880,17 +869,44 @@ export async function POST(request) {
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      lead_score: leadRecord.segment,
-      sheet_saved: sheetSaved,
-      delivery,
-      lead_id: leadRecord.lead_id,
-      status: leadRecord.status,
-      priority: leadRecord.priority,
-      next_action: leadRecord.next_action,
-      next_best_action: leadRecord.next_best_action,
-    })
+  return {
+    success: true,
+    lead_score: leadRecord.segment,
+    sheet_saved: sheetSaved,
+    delivery,
+    lead_id: leadRecord.lead_id,
+    status: leadRecord.status,
+    priority: leadRecord.priority,
+    next_action: leadRecord.next_action,
+    next_best_action: leadRecord.next_best_action,
+  }
+}
+
+export async function POST(request) {
+  try {
+    const body = await request.json()
+    const forwardedFor = request.headers.get('x-forwarded-for')
+    const clientIp = forwardedFor?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || ''
+    const userAgent = request.headers.get('user-agent') || ''
+    const isBackground = new URL(request.url).searchParams.get('background') === '1'
+
+    if (isBackground) {
+      waitUntil(
+        processLead(body, { clientIp, userAgent }).catch((error) => {
+          console.error('❌ Background Lead API Error:', error)
+        })
+      )
+
+      return NextResponse.json(
+        {
+          success: true,
+          queued: true,
+        },
+        { status: 202 }
+      )
+    }
+
+    return NextResponse.json(await processLead(body, { clientIp, userAgent }))
   } catch (error) {
     console.error('❌ Lead API Error:', error)
     return NextResponse.json(
