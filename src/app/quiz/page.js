@@ -12,10 +12,23 @@ export default function QuizPage() {
     <>
       <Header />
       <main className="quiz-page-main">
-        <Suspense fallback={null}>
+        <Suspense fallback={<QuizLoading />}>
           <Quiz />
         </Suspense>
       </main>
     </>
+  )
+}
+
+function QuizLoading() {
+  return (
+    <section className="quiz-section">
+      <div className="quiz-loading-card">
+        <span>NovaHaus</span>
+        <h1>Quiz wird geladen</h1>
+        <p>Wenn die Seite nicht sofort erscheint, laden Sie sie bitte neu.</p>
+        <a href="/quiz">Quiz neu öffnen</a>
+      </div>
+    </section>
   )
 }

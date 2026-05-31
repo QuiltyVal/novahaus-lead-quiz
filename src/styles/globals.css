@@ -422,6 +422,54 @@ a {
   justify-content: center;
 }
 
+.quiz-loading-card {
+  width: min(100%, 520px);
+  margin-top: 64px;
+  padding: 32px;
+  border: 1px solid #e6e0d8;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 18px 60px rgba(20, 30, 40, 0.08);
+  text-align: center;
+}
+
+.quiz-loading-card span {
+  display: block;
+  margin-bottom: 10px;
+  color: #be4a74;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.quiz-loading-card h1 {
+  margin: 0 0 10px;
+  color: #17212b;
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.quiz-loading-card p {
+  margin: 0 0 22px;
+  color: #5f6973;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.quiz-loading-card a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 8px;
+  background: #2a6784;
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
 /* Progress Bar — tight at the top */
 .progress-wrapper {
   margin-bottom: 24px;
