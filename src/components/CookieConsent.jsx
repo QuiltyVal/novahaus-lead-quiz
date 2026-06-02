@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react'
 
 const CONSENT_KEY = 'novahaus_cookie_consent'
+const CONSENT_META_KEY = 'novahaus_cookie_consent_meta'
+const CONSENT_VERSION = '2026-06-02'
 
 /**
  * Reads the stored consent choice.
@@ -18,6 +20,12 @@ export function getConsent() {
  */
 export function hasMarketingConsent() {
   return getConsent() === 'all'
+}
+
+function getConsentLabel(choice) {
+  if (choice === 'all') return 'Alle Cookies'
+  if (choice === 'essential') return 'Nur notwendige Cookies'
+  return ''
 }
 
 /**
@@ -48,10 +56,14 @@ function clearTrackingCookies() {
 export default function CookieConsent() {
   const [visible, setVisible] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
+  const [consent, setConsent] = useState(null)
 
   useEffect(() => {
-    // Only show banner if user hasn't decided yet
-    if (!getConsent()) {
+    const storedConsent = getConsent()
+    setConsent(storedConsent)
+
+    // The first decision is mandatory: no optional cookies load before this.
+    if (!storedConsent) {
       setVisible(true)
     }
 
@@ -64,9 +76,29 @@ export default function CookieConsent() {
     return () => window.removeEventListener('open-cookie-settings', onOpenSettings)
   }, [])
 
+  useEffect(() => {
+    if (!visible) return undefined
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [visible])
+
   const accept = useCallback((choice) => {
     const previousChoice = getConsent()
     localStorage.setItem(CONSENT_KEY, choice)
+    localStorage.setItem(
+      CONSENT_META_KEY,
+      JSON.stringify({
+        choice,
+        version: CONSENT_VERSION,
+        updatedAt: new Date().toISOString(),
+      }),
+    )
+    setConsent(choice)
     setVisible(false)
     setShowDetails(false)
 
@@ -82,13 +114,12 @@ export default function CookieConsent() {
     }
   }, [])
 
-  // Current consent status text for the banner
-  const currentConsent = getConsent()
+  const firstChoiceRequired = visible && !consent
 
   return (
     <>
       {/* Floating cookie button — always visible when banner is closed */}
-      {!visible && (
+      {!visible && consent && (
         <button
           type="button"
           className="cookie-settings-fab"
@@ -102,23 +133,35 @@ export default function CookieConsent() {
 
       {/* Cookie consent banner / settings dialog */}
       {visible && (
-        <div className="cookie-overlay" role="dialog" aria-label="Cookie-Einstellungen">
+        <div
+          className="cookie-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="cookie-consent-title"
+        >
           <div className="cookie-banner">
             <div className="cookie-banner-inner">
-              <h3>🍪 Cookie-Einstellungen</h3>
+              <h3 id="cookie-consent-title">Cookie-Einwilligung</h3>
 
-              {currentConsent && (
+              {consent && (
                 <p className="cookie-current-status">
                   Aktuelle Einstellung:{' '}
-                  <strong>{currentConsent === 'all' ? 'Alle Cookies' : 'Nur essenzielle'}</strong>
+                  <strong>{getConsentLabel(consent)}</strong>
                 </p>
               )}
 
               <p>
-                Wir verwenden Cookies und ähnliche Technologien, um Ihnen die bestmögliche
-                Nutzungserfahrung zu bieten. Marketing-Cookies helfen uns, unsere Angebote zu
-                verbessern. Sie können Ihre Einstellungen jederzeit ändern.
+                Wir verwenden notwendige Cookies für den Betrieb der Website. Optionale
+                Marketing- und Analyse-Technologien wie Google Tag Manager und Meta Pixel
+                werden erst nach Ihrer Einwilligung aktiviert.
               </p>
+
+              {firstChoiceRequired && (
+                <p className="cookie-required-note">
+                  Bitte treffen Sie eine Auswahl, bevor Sie die Website weiter nutzen.
+                  Sie können Ihre Entscheidung später jederzeit ändern.
+                </p>
+              )}
 
               {showDetails && (
                 <div className="cookie-details">
@@ -128,9 +171,9 @@ export default function CookieConsent() {
                       <span className="cookie-always-on">Immer aktiv</span>
                     </div>
                     <p>
-                      Notwendig für die Grundfunktionen der Website (Navigation, Formulare,
-                      Sicherheit). Ohne diese Cookies kann die Website nicht ordnungsgemäß
-                      funktionieren.
+                      Notwendig für Grundfunktionen wie Navigation, Formularverarbeitung,
+                      Sicherheit und das Speichern Ihrer Cookie-Auswahl. Diese Cookies
+                      können nicht deaktiviert werden.
                     </p>
                   </div>
                   <div className="cookie-category">
@@ -139,10 +182,9 @@ export default function CookieConsent() {
                       <span className="cookie-optional">Optional</span>
                     </div>
                     <p>
-                      Google Tag Manager, Meta Pixel &amp; Conversions API werden verwendet, um
-                      die Effektivität unserer Werbung zu messen und Ihnen relevante Inhalte
-                      anzuzeigen. Diese Daten können an Google und Meta (Facebook) übermittelt
-                      werden.
+                      Google Tag Manager, Meta Pixel und Meta Conversions API können genutzt
+                      werden, um Website-Nutzung und Kampagnen zu messen. Diese Dienste
+                      werden nur geladen, wenn Sie „Alle akzeptieren“ wählen.
                     </p>
                   </div>
                 </div>
@@ -150,16 +192,16 @@ export default function CookieConsent() {
 
               <div className="cookie-actions">
                 <button
+                  className="cookie-btn cookie-btn--essential"
+                  onClick={() => accept('essential')}
+                >
+                  Nur notwendige Cookies
+                </button>
+                <button
                   className="cookie-btn cookie-btn--accept"
                   onClick={() => accept('all')}
                 >
                   Alle akzeptieren
-                </button>
-                <button
-                  className="cookie-btn cookie-btn--essential"
-                  onClick={() => accept('essential')}
-                >
-                  Nur essenzielle
                 </button>
                 <button
                   className="cookie-btn cookie-btn--details"

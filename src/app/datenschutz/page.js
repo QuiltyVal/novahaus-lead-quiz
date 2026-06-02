@@ -145,24 +145,23 @@ export default function DatenschutzPage() {
             Dateien, die Ihr Browser automatisch erstellt und die auf Ihrem Endgerät
             gespeichert werden. Cookies richten auf Ihrem Endgerät keinen Schaden an.
           </p>
-          <p>
-            Wir unterscheiden zwischen essenziellen und optionalen Cookies:
-          </p>
+          <p>Wir unterscheiden zwischen notwendigen und optionalen Cookies:</p>
           <ul>
             <li>
-              <strong>Essenzielle Cookies:</strong> Notwendig für die Grundfunktionen der
+              <strong>Notwendige Cookies:</strong> Erforderlich für die Grundfunktionen der
               Website (z. B. Speicherung Ihrer Cookie-Einstellungen). Diese werden ohne
               Ihre Einwilligung gesetzt.
             </li>
             <li>
               <strong>Marketing- &amp; Analyse-Cookies:</strong> Werden nur gesetzt, wenn
-              Sie im Cookie-Banner „Alle akzeptieren" wählen. Dazu gehören Cookies von
-              Meta (Facebook Pixel).
+              Sie im Cookie-Banner „Alle akzeptieren“ wählen. Dazu gehören Dienste wie
+              Google Tag Manager und Meta Pixel.
             </li>
           </ul>
           <p>
-            Sie können Ihre Cookie-Einstellungen jederzeit über Ihren Browser ändern
-            oder alle Cookies löschen.
+            Sie können Ihre Cookie-Einstellungen jederzeit über den Link
+            „Cookie-Einstellungen“ im Footer oder über die Cookie-Schaltfläche auf der
+            Website ändern.
           </p>
 
           {/* ── 6. Meta Pixel & CAPI ── */}
@@ -176,7 +175,7 @@ export default function DatenschutzPage() {
           <p>
             <strong>Wichtig:</strong> Das Meta Pixel und die Conversions API werden
             erst aktiviert, nachdem Sie im Cookie-Banner Ihre Einwilligung erteilt
-            haben („Alle akzeptieren"). Ohne Ihre Einwilligung werden keine Daten an
+            haben („Alle akzeptieren“). Ohne Ihre Einwilligung werden keine Daten an
             Meta übermittelt.
           </p>
           <p>
@@ -192,8 +191,7 @@ export default function DatenschutzPage() {
           </ul>
           <p>
             Die Rechtsgrundlage ist Art. 6 Abs. 1 S. 1 lit. a DSGVO (Einwilligung).
-            Sie können Ihre Einwilligung jederzeit widerrufen, indem Sie Ihre Cookies
-            löschen oder den Browser-Cache leeren.
+            Sie können Ihre Einwilligung jederzeit über die Cookie-Einstellungen widerrufen.
           </p>
           <p>
             Weitere Informationen zum Datenschutz bei Meta finden Sie unter:{' '}

@@ -1865,12 +1865,14 @@ a {
   position: fixed;
   inset: 0;
   z-index: 10000;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(7, 16, 22, 0.62);
   display: flex;
   align-items: flex-end;
   justify-content: center;
   padding: 16px;
   animation: fadeIn 0.3s ease;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 @keyframes fadeIn {
@@ -1880,12 +1882,13 @@ a {
 
 .cookie-banner {
   background: #fff;
-  border-radius: 20px 20px 0 0;
-  max-width: 600px;
+  border-radius: 12px 12px 0 0;
+  max-width: 680px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(33, 46, 55, 0.08);
 }
 
 @media (min-width: 768px) {
@@ -1894,12 +1897,12 @@ a {
   }
 
   .cookie-banner {
-    border-radius: 20px;
+    border-radius: 12px;
   }
 }
 
 .cookie-banner-inner {
-  padding: 28px 24px 24px;
+  padding: 28px 26px 24px;
 }
 
 .cookie-banner h3 {
@@ -1914,6 +1917,17 @@ a {
   color: #555;
   line-height: 1.7;
   margin-bottom: 20px;
+}
+
+.cookie-required-note {
+  background: #f8f3e7;
+  border: 1px solid #eadbb7;
+  color: #584318 !important;
+  border-radius: 8px;
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+  padding: 10px 12px;
+  margin-top: -8px;
 }
 
 .cookie-current-status {
@@ -1931,7 +1945,7 @@ a {
 
 .cookie-details {
   background: #f9f9f9;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 16px;
   margin-bottom: 20px;
 }
@@ -2000,14 +2014,15 @@ a {
 
 .cookie-btn {
   padding: 12px 20px;
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  border: none;
+  border: 1px solid transparent;
   transition: all 0.2s ease;
   flex: 1;
   text-align: center;
+  min-height: 46px;
 }
 
 .cookie-btn--accept {
@@ -2022,19 +2037,23 @@ a {
 }
 
 .cookie-btn--essential {
-  background: #f0f0f0;
-  color: #333;
+  background: #fff;
+  color: #263844;
+  border-color: #b9c4ca;
 }
 
 .cookie-btn--essential:hover {
-  background: #e0e0e0;
+  background: #f3f6f7;
+  border-color: #899aa5;
 }
 
 .cookie-btn--details {
   background: transparent;
-  color: #888;
+  color: #526573;
   font-size: 13px;
   padding: 8px 12px;
+  border-color: transparent;
+  min-height: 40px;
 }
 
 .cookie-btn--details:hover {
