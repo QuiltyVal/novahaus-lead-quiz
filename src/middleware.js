@@ -28,8 +28,8 @@ function parseBasicAuth(header) {
 
 export function middleware(request) {
   const adminPassword = process.env.ADMIN_PASSWORD || ''
-  const hostname = request.nextUrl.hostname
-  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]'
+  const host = request.headers.get('host') || ''
+  const isLocalhost = host.startsWith('localhost:') || host.startsWith('127.0.0.1:')
 
   if (!adminPassword) {
     if (isLocalhost) {
