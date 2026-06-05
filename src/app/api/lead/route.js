@@ -3,6 +3,7 @@ import { waitUntil } from '@vercel/functions'
 import { randomUUID } from 'crypto'
 import { google } from 'googleapis'
 import nodemailer from 'nodemailer'
+import { DEFAULT_TENANT_CONFIG, optionMap } from '@/lib/tenantConfig'
 
 /* ============================================
    CONFIG — from env variables
@@ -33,6 +34,8 @@ const OPENROUTER_SITE_URL = process.env.OPENROUTER_SITE_URL || process.env.NEXT_
 const OPENROUTER_APP_NAME = process.env.OPENROUTER_APP_NAME || 'NovaHaus Lead-to-Call Demo'
 const FREE_LLM_MODELS_URL = process.env.FREE_LLM_MODELS_URL || 'https://shir-man.com/api/free-llm/top-models'
 const FREE_LLM_FALLBACK_MODEL = process.env.FREE_LLM_FALLBACK_MODEL || 'openrouter/free'
+const TENANT_CONFIG = DEFAULT_TENANT_CONFIG
+const BRAND_NAME = TENANT_CONFIG.brand.name
 
 /**
  * Build Google Auth from env.
@@ -80,31 +83,10 @@ function getAuth() {
 /* ============================================
    Human-readable labels
    ============================================ */
-const WOHNUNG_LABELS = {
-  '3-zimmer': '3-Zimmer mit Garten (92 m², €329.000)',
-  '4-zimmer': '4-Zimmer Dachterrasse (105 m², €359.000)',
-  'beide': 'Beide Wohnungen (€688.000)',
-}
-
-const ZEITRAHMEN_LABELS = {
-  'sofort': 'So schnell wie möglich',
-  '3-6-monate': 'In 3–6 Monaten',
-  'informieren': 'Informiert sich erst',
-}
-
-const EIGENKAPITAL_LABELS = {
-  'unter-30k': 'Unter €30.000',
-  '30-50k': '€30.000 – €50.000',
-  '50-80k': '€50.000 – €80.000',
-  'ueber-80k': 'Über €80.000',
-  'keine-angabe': 'Keine Angabe',
-}
-
-const FINANZIERUNG_LABELS = {
-  'vorhanden': 'Ja, vorhanden',
-  'in-planung': 'In Planung',
-  'benoetigt-hilfe': 'Braucht Unterstützung',
-}
+const WOHNUNG_LABELS = optionMap(TENANT_CONFIG.quiz.propertyOptions, 'label')
+const ZEITRAHMEN_LABELS = optionMap(TENANT_CONFIG.quiz.purchaseTimelineOptions, 'label')
+const EIGENKAPITAL_LABELS = optionMap(TENANT_CONFIG.quiz.equityBucketOptions, 'label')
+const FINANZIERUNG_LABELS = optionMap(TENANT_CONFIG.quiz.financingStatusOptions, 'label')
 
 const SCORE_EMOJIS = {
   hot: '🔥 HOT',
@@ -154,70 +136,31 @@ function addMinutes(isoDate, minutes) {
 }
 
 function getSalesQualification({ leadScore, zeitrahmen, eigenkapital, finanzierung, underqualified }) {
-  const hasMinimumCapital = ['30-50k', '50-80k', 'ueber-80k'].includes(eigenkapital)
-  const hasStrongCapital = ['50-80k', 'ueber-80k'].includes(eigenkapital)
-  const isActiveBuyer = ['sofort', '3-6-monate'].includes(zeitrahmen)
-  const financingReady = finanzierung === 'vorhanden'
+  const { scoring, workflow } = TENANT_CONFIG
+  const hasMinimumCapital = scoring.warm.equityBuckets.includes(eigenkapital)
+  const hasStrongCapital = scoring.hot.equityBuckets.includes(eigenkapital)
+  const isActiveBuyer = scoring.warm.purchaseTimelines.includes(zeitrahmen)
+  const financingReady = finanzierung === scoring.hot.financingStatus
 
-  if (underqualified || eigenkapital === 'unter-30k') {
-    return {
-      segment: 'not_qualified',
-      status: 'not_qualified',
-      priority: 'P4',
-      nextAction: 'send_soft_disqualification_or_financing_options',
-      assignedTo: 'ai_agent',
-      followupMinutes: 60 * 24 * 3,
-      handoffRequired: false,
-      handoffReason: '',
-      qualificationReason: 'minimum_equity_not_met',
-    }
+  if (underqualified || scoring.notQualified.equityBuckets.includes(eigenkapital)) {
+    return workflow.segments.not_qualified
   }
 
   if (
     leadScore === 'hot' ||
-    (zeitrahmen === 'sofort' && hasStrongCapital && financingReady)
+    (zeitrahmen === scoring.hot.purchaseTimeline && hasStrongCapital && financingReady)
   ) {
-    return {
-      segment: 'hot',
-      status: 'ready_for_call',
-      priority: 'P1',
-      nextAction: 'call_center_call_within_15min_and_send_expose',
-      assignedTo: 'call_center',
-      followupMinutes: 15,
-      handoffRequired: true,
-      handoffReason: 'hot_lead_ready_for_call',
-      qualificationReason: 'urgent_timeline_capital_and_financing_ready',
-    }
+    return workflow.segments.hot
   }
 
   if (
     leadScore === 'warm' ||
     (isActiveBuyer && hasMinimumCapital)
   ) {
-    return {
-      segment: 'warm',
-      status: 'ai_follow_up',
-      priority: 'P2',
-      nextAction: 'send_clarifying_question_and_offer_call',
-      assignedTo: 'ai_agent',
-      followupMinutes: 120,
-      handoffRequired: false,
-      handoffReason: '',
-      qualificationReason: 'active_buyer_but_financing_or_timing_needs_clarity',
-    }
+    return workflow.segments.warm
   }
 
-  return {
-    segment: 'cold',
-    status: 'nurture',
-    priority: 'P3',
-    nextAction: 'send_nurture_email',
-    assignedTo: 'nurture_agent',
-    followupMinutes: 60 * 24,
-    handoffRequired: false,
-    handoffReason: '',
-    qualificationReason: 'early_research_or_missing_financing_signal',
-  }
+  return workflow.segments.cold
 }
 
 function buildLeadSummary({ wohnungLabel, zeitrahmenLabel, eigenkapitalLabel, finanzierungLabel }) {
@@ -236,34 +179,34 @@ function buildEmailDraft({ firstName, segment, wohnungLabel, zeitrahmenLabel, ei
   if (segment === 'hot') {
     return {
       email_subject: 'Ihr Exposé und ein kurzer Abstimmungstermin',
-      email_draft: `${greeting}\n\nvielen Dank für Ihr Interesse ${objectLine}. Ihre Angaben passen sehr gut zu einem kurzfristigen Beratungsgespräch.\n\nDarf unser Team Sie heute kurz telefonisch erreichen, um die nächsten Schritte und verfügbare Besichtigungstermine abzustimmen?\n\nViele Grüße\nNovaHaus Immobilien`,
+      email_draft: `${greeting}\n\nvielen Dank für Ihr Interesse ${objectLine}. Ihre Angaben passen sehr gut zu einem kurzfristigen Beratungsgespräch.\n\nDarf unser Team Sie heute kurz telefonisch erreichen, um die nächsten Schritte und verfügbare Besichtigungstermine abzustimmen?\n\nViele Grüße\n${TENANT_CONFIG.email.signature}`,
     }
   }
 
   if (segment === 'warm') {
     return {
       email_subject: 'Kurze Rückfrage zu Ihrer Finanzierung',
-      email_draft: `${greeting}\n\nvielen Dank für Ihre Anfrage ${objectLine}. Damit wir Ihnen direkt die passenden nächsten Schritte senden können: Haben Sie bereits mit einer Bank oder einem Finanzierungsberater über den Kauf gesprochen?\n\nIhre Angaben: ${zeitrahmenLabel}, ${eigenkapitalLabel}, ${finanzierungLabel}.\n\nWenn Sie möchten, können wir danach einen kurzen Telefontermin mit unserem Team koordinieren.\n\nViele Grüße\nNovaHaus Immobilien`,
+      email_draft: `${greeting}\n\nvielen Dank für Ihre Anfrage ${objectLine}. Damit wir Ihnen direkt die passenden nächsten Schritte senden können: Haben Sie bereits mit einer Bank oder einem Finanzierungsberater über den Kauf gesprochen?\n\nIhre Angaben: ${zeitrahmenLabel}, ${eigenkapitalLabel}, ${finanzierungLabel}.\n\nWenn Sie möchten, können wir danach einen kurzen Telefontermin mit unserem Team koordinieren.\n\nViele Grüße\n${TENANT_CONFIG.email.signature}`,
     }
   }
 
   if (segment === 'not_qualified') {
     return {
-      email_subject: 'Ihre Anfrage bei NovaHaus Immobilien',
-      email_draft: `${greeting}\n\nvielen Dank für Ihr Interesse ${objectLine}. Für dieses Angebot empfehlen wir in der Regel mehr Eigenkapital, damit die Finanzierung realistisch geprüft werden kann.\n\nWir können Ihnen aber gern alternative Optionen oder Hinweise zur Finanzierungsvorbereitung senden.\n\nViele Grüße\nNovaHaus Immobilien`,
+      email_subject: `Ihre Anfrage bei ${BRAND_NAME}`,
+      email_draft: `${greeting}\n\nvielen Dank für Ihr Interesse ${objectLine}. Für dieses Angebot empfehlen wir in der Regel mehr Eigenkapital, damit die Finanzierung realistisch geprüft werden kann.\n\nWir können Ihnen aber gern alternative Optionen oder Hinweise zur Finanzierungsvorbereitung senden.\n\nViele Grüße\n${TENANT_CONFIG.email.signature}`,
     }
   }
 
   return {
     email_subject: 'Weitere Informationen zu Ihrer Immobiliensuche',
-    email_draft: `${greeting}\n\nvielen Dank für Ihre Anfrage ${objectLine}. Wir senden Ihnen gern weitere Informationen und halten Sie zu passenden Angeboten auf dem Laufenden.\n\nFalls Ihr Kaufzeitraum konkreter wird oder Sie Ihre Finanzierung klären möchten, antworten Sie einfach kurz auf diese E-Mail.\n\nViele Grüße\nNovaHaus Immobilien`,
+    email_draft: `${greeting}\n\nvielen Dank für Ihre Anfrage ${objectLine}. Wir senden Ihnen gern weitere Informationen und halten Sie zu passenden Angeboten auf dem Laufenden.\n\nFalls Ihr Kaufzeitraum konkreter wird oder Sie Ihre Finanzierung klären möchten, antworten Sie einfach kurz auf diese E-Mail.\n\nViele Grüße\n${TENANT_CONFIG.email.signature}`,
   }
 }
 
 function buildAIEmailPrompt(leadRecord) {
   return {
-    brand: 'NovaHaus Immobilien',
-    language: 'de-DE',
+    brand: BRAND_NAME,
+    language: TENANT_CONFIG.brand.language,
     lead: {
       first_name: leadRecord.first_name,
       segment: leadRecord.segment,
@@ -315,8 +258,8 @@ function normalizeAIEmailDraft(parsed) {
     return null
   }
 
-  if (!body.includes('NovaHaus Immobilien')) {
-    body = `${body.replace(/\s+$/g, '')}\n\nViele Grüße\nNovaHaus Immobilien`
+  if (!body.includes(TENANT_CONFIG.email.signature)) {
+    body = `${body.replace(/\s+$/g, '')}\n\nViele Grüße\n${TENANT_CONFIG.email.signature}`
   }
 
   return {
@@ -327,7 +270,7 @@ function normalizeAIEmailDraft(parsed) {
 
 function buildAIEmailSystemInstruction() {
   return [
-    'You write concise German real-estate follow-up email drafts for NovaHaus Immobilien.',
+    `You write concise German real-estate follow-up email drafts for ${BRAND_NAME}.`,
     'Return only valid JSON with exactly these keys: "subject" and "body".',
     'Rules:',
     '- Write in polite German.',
@@ -337,12 +280,12 @@ function buildAIEmailSystemInstruction() {
     '- Never guarantee financing, availability, returns, approval, or legal outcomes.',
     '- Do not pressure the lead or invent facts.',
     '- The email is a draft for human review, not an automatic final send.',
-    '- Sign with "Viele Grüße" and "NovaHaus Immobilien".',
+    `- Sign with "Viele Grüße" and "${TENANT_CONFIG.email.signature}".`,
     'Segment handling:',
-    '- hot: confirm interest, offer a same-day short call, mention next steps and viewing coordination.',
-    '- warm: ask one financing clarification and offer a short call.',
-    '- cold: keep it helpful and low-pressure; invite reply when timing becomes concrete.',
-    '- not_qualified: respond softly; suggest financing preparation or alternative options.',
+    `- hot: ${TENANT_CONFIG.email.systemInstructionSegments.hot}`,
+    `- warm: ${TENANT_CONFIG.email.systemInstructionSegments.warm}`,
+    `- cold: ${TENANT_CONFIG.email.systemInstructionSegments.cold}`,
+    `- not_qualified: ${TENANT_CONFIG.email.systemInstructionSegments.not_qualified}`,
   ].join('\n')
 }
 
@@ -593,8 +536,10 @@ function buildLeadRecord(body, requestMeta = {}) {
   return {
     lead_id: randomUUID(),
     created_at: createdAt,
-    source: 'novahaus_quiz',
-    quiz_version: 'novahaus_object_quiz_v1',
+    tenant_id: body.tenant_id || TENANT_CONFIG.tenantId,
+    project_id: body.project_id || TENANT_CONFIG.projectId,
+    source: TENANT_CONFIG.quiz.source,
+    quiz_version: body.quiz_version || TENANT_CONFIG.quiz.version,
     status: qualification.status,
     priority: qualification.priority,
 

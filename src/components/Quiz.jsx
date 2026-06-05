@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { trackEvent } from '@/lib/tracking'
 import { calculateLeadScore } from '@/lib/leadScoring'
 import { DEMO_SCENARIOS, getDemoScenario } from '@/lib/demoScenarios'
+import { DEFAULT_TENANT_CONFIG } from '@/lib/tenantConfig'
 import {
   IconGarden,
   IconSun,
@@ -180,48 +181,21 @@ function PhoneInput({ value, onChange, hasError, onClearError }) {
 /* ============================================
    QUIZ DATA CONFIG
    ============================================ */
-const OBJECTS = [
-  {
-    value: '3-zimmer',
-    Icon: IconGarden,
-    title: '3-Zimmer mit Garten',
-    details: '92 m² • €329.000 • Bezugsfrei 03/2026',
-  },
-  {
-    value: '4-zimmer',
-    Icon: IconSun,
-    title: '4-Zimmer mit Dachterrasse',
-    details: '105 m² • €359.000 • Bezugsfrei 04/2026',
-  },
-  {
-    value: 'beide',
-    Icon: (props) => QUIZ_ICONS.document(props),
-    title: 'Beide Wohnungen',
-    details: 'Ich möchte beide Exposés',
-  },
-]
+const QUIZ_CONFIG = DEFAULT_TENANT_CONFIG.quiz
+const OBJECT_ICON_BY_KEY = {
+  garden: IconGarden,
+  sun: IconSun,
+  document: (props) => QUIZ_ICONS.document(props),
+}
 
-const ZEITRAHMEN = [
-  { value: 'sofort', icon: 'fire', text: 'So schnell wie möglich' },
-  { value: '3-6-monate', icon: 'calendar', text: 'In den nächsten 3–6 Monaten' },
-  { value: 'informieren', icon: 'lightbulb', text: 'Ich informiere mich erst' },
-]
-
-const EIGENKAPITAL = [
-  { value: 'unter-30k', icon: 'money', text: 'Unter 30.000 €' },
-  { value: '30-50k', icon: 'money', text: '30.000 – 50.000 €' },
-  { value: '50-80k', icon: 'money', text: '50.000 – 80.000 €' },
-  { value: 'ueber-80k', icon: 'bank', text: 'Über 80.000 €' },
-  { value: 'keine-angabe', icon: 'lock', text: 'Keine Angabe' },
-]
-
-const FINANZIERUNG = [
-  { value: 'vorhanden', icon: 'check', text: 'Ja, bereits vorhanden' },
-  { value: 'in-planung', icon: 'document', text: 'Nein, aber in Planung' },
-  { value: 'benoetigt-hilfe', icon: 'handshake', text: 'Nein, brauche Unterstützung' },
-]
-
-const TOTAL_STEPS = 5
+const OBJECTS = QUIZ_CONFIG.propertyOptions.map((option) => ({
+  ...option,
+  Icon: OBJECT_ICON_BY_KEY[option.icon] || ((props) => QUIZ_ICONS.document(props)),
+}))
+const ZEITRAHMEN = QUIZ_CONFIG.purchaseTimelineOptions
+const EIGENKAPITAL = QUIZ_CONFIG.equityBucketOptions
+const FINANZIERUNG = QUIZ_CONFIG.financingStatusOptions
+const TOTAL_STEPS = QUIZ_CONFIG.totalSteps
 const AUTO_ADVANCE_DELAY = 350 // ms — brief flash to show selection
 
 /* ============================================
@@ -247,7 +221,10 @@ function RadioOption({ iconKey, text, selected, onClick }) {
    QUIZ COMPONENT
    ============================================ */
 /* Valid wohnung values for URL pre-selection */
-const VALID_WOHNUNG = ['3-zimmer', '4-zimmer', 'beide']
+const VALID_WOHNUNG = QUIZ_CONFIG.propertyOptions.map((option) => option.value)
+const PROPERTY_VALUE_BY_ID = Object.fromEntries(
+  QUIZ_CONFIG.propertyOptions.map((option) => [option.value, option.valueEur || 0]),
+)
 
 export default function Quiz() {
   const router = useRouter()
@@ -312,7 +289,7 @@ export default function Quiz() {
   const handleEigenkapitalClick = (value) => {
     setAnswers((a) => ({ ...a, eigenkapital: value }))
     setTimeout(() => {
-      if (value === 'unter-30k') {
+      if (value === QUIZ_CONFIG.softDisqualification.triggerEquityBucket) {
         setShowModal(true)
       } else {
         goToStep(4)
@@ -382,7 +359,7 @@ export default function Quiz() {
 
     setSubmitting(true)
 
-    const leadScore = calculateLeadScore(answers)
+    const leadScore = calculateLeadScore(answers, DEFAULT_TENANT_CONFIG)
 
     const source = getUTMParams()
     const demoSource = isDemoMode
@@ -400,6 +377,9 @@ export default function Quiz() {
     const leadData = {
       ...answers,
       ...formData,
+      tenant_id: DEFAULT_TENANT_CONFIG.tenantId,
+      project_id: DEFAULT_TENANT_CONFIG.projectId,
+      quiz_version: QUIZ_CONFIG.version,
       lead_score: leadScore,
       underqualified,
       source: demoSource,
@@ -408,12 +388,7 @@ export default function Quiz() {
       timestamp: new Date().toISOString(),
     }
 
-    const leadValue =
-      answers.wohnung === '4-zimmer'
-        ? 359000
-        : answers.wohnung === 'beide'
-        ? 688000
-        : 329000
+    const leadValue = PROPERTY_VALUE_BY_ID[answers.wohnung] || 0
 
     trackEvent(
       'Lead',
@@ -679,13 +654,14 @@ export default function Quiz() {
           <div className="modal">
             <h3>Vielen Dank für Ihr Interesse!</h3>
             <p>
-              Für unsere Wohnungen (ab €329.000) empfehlen wir ein
-              Eigenkapital von mindestens <strong>€50.000</strong>.
+              Für unsere Wohnungen empfehlen wir ein Eigenkapital von mindestens{' '}
+              <strong>{QUIZ_CONFIG.softDisqualification.recommendedMinimumEquity}</strong>.
             </p>
             <p>Gerne informieren wir Sie über:</p>
             <ul>
-              <li>Alternative Objekte in Ihrer Preisklasse</li>
-              <li>Möglichkeiten zur Finanzierung</li>
+              {QUIZ_CONFIG.softDisqualification.alternativeTopics.map((topic) => (
+                <li key={topic}>{topic}</li>
+              ))}
             </ul>
             <div className="modal-buttons">
               <button className="modal-btn-primary" onClick={modalContinue}>
