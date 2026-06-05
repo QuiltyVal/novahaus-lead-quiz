@@ -70,6 +70,16 @@ N8N_LEAD_WEBHOOK_SECRET=shared-secret
 
 The same secret must be configured on the n8n instance.
 
+Optional internal Lead Inbox:
+
+```bash
+DATABASE_URL=postgresql://user:password@host:5432/database
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=strong-password
+```
+
+Run `db/schema.sql` once on the Postgres database before enabling the inbox in production. Without `DATABASE_URL`, the existing n8n/Google Sheets workflow continues to work.
+
 ## Marketing Trackers
 
 Tracking slots are built in but disabled until env variables are set:

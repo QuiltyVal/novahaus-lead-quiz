@@ -11,6 +11,7 @@ This runbook explains how to operate the NovaHaus lead-to-call demo safely.
 | Workflow automation | n8n | https://workflows.valquilty.com |
 | Workflow name | n8n | NovaHaus Lead Collector - MVP |
 | Lead storage | Google Sheets | Leads tab |
+| Internal Lead Inbox | Next.js + Postgres | https://novahaus.valquilty.com/admin/leads |
 | Email review | Gmail | Drafts |
 
 ## Data Flow
@@ -64,6 +65,9 @@ vercel --prod
 Required production environment variables live in Vercel, not in GitHub:
 
 ```text
+DATABASE_URL
+ADMIN_USERNAME
+ADMIN_PASSWORD
 N8N_LEAD_WEBHOOK_URL
 N8N_LEAD_WEBHOOK_SECRET
 AI_EMAIL_PROVIDER
@@ -82,6 +86,31 @@ NEXT_PUBLIC_LINKEDIN_URL
 ```
 
 Never commit `.env.local`.
+
+## Internal Lead Inbox
+
+The project now has a prepared admin inbox at:
+
+```text
+/admin/leads
+```
+
+It is protected with HTTP Basic Auth in production. Set:
+
+```text
+ADMIN_USERNAME
+ADMIN_PASSWORD
+DATABASE_URL
+```
+
+Database setup:
+
+1. Create a Postgres database.
+2. Run `db/schema.sql` once.
+3. Add `DATABASE_URL` in Vercel.
+4. Redeploy.
+
+If `DATABASE_URL` is not set, the public funnel still works through n8n/Google Sheets and `/admin/leads` shows a setup state.
 
 ## Marketing Trackers
 

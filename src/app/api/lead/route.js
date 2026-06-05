@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto'
 import { google } from 'googleapis'
 import nodemailer from 'nodemailer'
 import { DEFAULT_TENANT_CONFIG, optionMap } from '@/lib/tenantConfig'
+import { saveLeadRecord } from '@/lib/leadStore'
 
 /* ============================================
    CONFIG — from env variables
@@ -712,111 +713,130 @@ async function processLead(body, requestMeta = {}) {
     lead_score,
   } = body
 
-    const leadRecord = await attachAIEmailDraft(buildLeadRecord(body, { clientIp, userAgent }))
-    let delivery = 'none'
+  const leadRecord = await attachAIEmailDraft(buildLeadRecord(body, { clientIp, userAgent }))
+  let delivery = 'none'
+  let databaseSaved = false
 
-    try {
-      const n8nSaved = await sendToN8n(leadRecord)
-      if (n8nSaved) {
-        delivery = 'n8n'
-        console.log(`✅ Lead sent to n8n: ${firstName} ${lastName} (${lead_score})`)
-      }
-    } catch (n8nErr) {
-      console.error('❌ n8n webhook error:', n8nErr.message)
-      if (!SPREADSHEET_ID) {
-        throw n8nErr
-      }
+  try {
+    const databaseResult = await saveLeadRecord(leadRecord)
+    databaseSaved = Boolean(databaseResult.saved)
+
+    if (databaseSaved) {
+      console.log(`✅ Lead saved to database: ${leadRecord.lead_id}`)
+    } else {
+      console.log(`⚠️  Database skipped: ${databaseResult.reason}`)
     }
+  } catch (databaseErr) {
+    console.error('❌ Database lead save error:', databaseErr.message)
+  }
 
-    // ── Debug: log which env vars are set ──
-    console.log('📋 Lead API called — checking env vars:')
-    console.log('   GOOGLE_SERVICE_ACCOUNT_EMAIL:', process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ? '✅ SET' : '❌ NOT SET')
-    console.log('   GOOGLE_PRIVATE_KEY:', process.env.GOOGLE_PRIVATE_KEY ? `✅ SET (${process.env.GOOGLE_PRIVATE_KEY.length} chars)` : '❌ NOT SET')
-    console.log('   GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY:', process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY ? `✅ SET (${process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY.length} chars)` : '❌ NOT SET')
-    console.log('   GOOGLE_SHEET_ID:', process.env.GOOGLE_SHEET_ID ? '✅ SET' : '❌ NOT SET')
-    console.log('   GOOGLE_SHEETS_ID:', process.env.GOOGLE_SHEETS_ID ? '✅ SET' : '❌ NOT SET')
-    console.log('   N8N_LEAD_WEBHOOK_URL:', N8N_LEAD_WEBHOOK_URL ? '✅ SET' : '❌ NOT SET')
-    console.log('   SHEET_NAME resolved to:', SHEET_NAME)
-    console.log('   SPREADSHEET_ID resolved to:', SPREADSHEET_ID ? `✅ ${SPREADSHEET_ID.substring(0, 8)}...` : '❌ EMPTY')
-    console.log('   Lead data:', firstName, lastName, email, lead_score)
+  try {
+    const n8nSaved = await sendToN8n(leadRecord)
+    if (n8nSaved) {
+      delivery = 'n8n'
+      console.log(`✅ Lead sent to n8n: ${firstName} ${lastName} (${lead_score})`)
+    }
+  } catch (n8nErr) {
+    console.error('❌ n8n webhook error:', n8nErr.message)
+    if (!SPREADSHEET_ID && !databaseSaved) {
+      throw n8nErr
+    }
+  }
 
-    // ── Prepare row for Google Sheets fallback ──
-    const row = LEAD_SHEET_COLUMNS.map((column) => {
-      const value = leadRecord[column]
-      if (typeof value === 'boolean') return value ? 'yes' : 'no'
-      return value ?? ''
-    })
+  // ── Debug: log which env vars are set ──
+  console.log('📋 Lead API called — checking env vars:')
+  console.log('   GOOGLE_SERVICE_ACCOUNT_EMAIL:', process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ? '✅ SET' : '❌ NOT SET')
+  console.log('   GOOGLE_PRIVATE_KEY:', process.env.GOOGLE_PRIVATE_KEY ? `✅ SET (${process.env.GOOGLE_PRIVATE_KEY.length} chars)` : '❌ NOT SET')
+  console.log('   GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY:', process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY ? `✅ SET (${process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY.length} chars)` : '❌ NOT SET')
+  console.log('   GOOGLE_SHEET_ID:', process.env.GOOGLE_SHEET_ID ? '✅ SET' : '❌ NOT SET')
+  console.log('   GOOGLE_SHEETS_ID:', process.env.GOOGLE_SHEETS_ID ? '✅ SET' : '❌ NOT SET')
+  console.log('   N8N_LEAD_WEBHOOK_URL:', N8N_LEAD_WEBHOOK_URL ? '✅ SET' : '❌ NOT SET')
+  console.log('   SHEET_NAME resolved to:', SHEET_NAME)
+  console.log('   SPREADSHEET_ID resolved to:', SPREADSHEET_ID ? `✅ ${SPREADSHEET_ID.substring(0, 8)}...` : '❌ EMPTY')
+  console.log('   Lead data:', firstName, lastName, email, lead_score)
 
-    // ── 1. Write to Google Sheets when n8n is not configured / failed ──
-    const auth = delivery !== 'n8n' ? getAuth() : null
-    let sheetSaved = false
+  // ── Prepare row for Google Sheets fallback ──
+  const row = LEAD_SHEET_COLUMNS.map((column) => {
+    const value = leadRecord[column]
+    if (typeof value === 'boolean') return value ? 'yes' : 'no'
+    return value ?? ''
+  })
 
-    console.log('🔑 Auth object created:', auth ? '✅ YES' : '❌ NULL (missing credentials)')
+  // ── 1. Write to Google Sheets when n8n is not configured / failed ──
+  const auth = delivery !== 'n8n' ? getAuth() : null
+  let sheetSaved = false
 
-    if (delivery !== 'n8n' && auth && SPREADSHEET_ID) {
-      try {
-        const sheets = google.sheets({ version: 'v4', auth })
-        console.log(`📊 Attempting to write to sheet "${SHEET_NAME}" in spreadsheet ${SPREADSHEET_ID}`)
+  console.log('🔑 Auth object created:', auth ? '✅ YES' : '❌ NULL (missing credentials)')
 
-        // Ensure header row exists
-        const existing = await sheets.spreadsheets.values.get({
+  if (delivery !== 'n8n' && auth && SPREADSHEET_ID) {
+    try {
+      const sheets = google.sheets({ version: 'v4', auth })
+      console.log(`📊 Attempting to write to sheet "${SHEET_NAME}" in spreadsheet ${SPREADSHEET_ID}`)
+
+      // Ensure header row exists
+      const existing = await sheets.spreadsheets.values.get({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${SHEET_NAME}!A1:AG1`,
+      })
+
+      if (!existing.data.values || existing.data.values.length === 0) {
+        console.log('📝 No header row found — creating headers...')
+        await sheets.spreadsheets.values.update({
           spreadsheetId: SPREADSHEET_ID,
           range: `${SHEET_NAME}!A1:AG1`,
-        })
-
-        if (!existing.data.values || existing.data.values.length === 0) {
-          console.log('📝 No header row found — creating headers...')
-          await sheets.spreadsheets.values.update({
-            spreadsheetId: SPREADSHEET_ID,
-            range: `${SHEET_NAME}!A1:AG1`,
-            valueInputOption: 'RAW',
-            requestBody: {
-              values: [LEAD_SHEET_COLUMNS],
-            },
-          })
-        }
-
-        // Append lead row
-        console.log('📝 Appending lead row...')
-        await sheets.spreadsheets.values.append({
-          spreadsheetId: SPREADSHEET_ID,
-          range: `${SHEET_NAME}!A:AG`,
-          valueInputOption: 'USER_ENTERED',
-          insertDataOption: 'INSERT_ROWS',
+          valueInputOption: 'RAW',
           requestBody: {
-            values: [row],
+            values: [LEAD_SHEET_COLUMNS],
           },
         })
-
-        sheetSaved = true
-        console.log(`✅ Lead saved to Google Sheets: ${firstName} ${lastName} (${lead_score})`)
-      } catch (sheetErr) {
-        console.error('❌ Google Sheets Error:', sheetErr.message)
-        console.error('❌ Full error:', JSON.stringify(sheetErr.errors || sheetErr.response?.data || sheetErr, null, 2))
       }
-    } else {
-      console.log('⚠️  Google Sheets not configured — lead logged locally:')
-      console.log('   auth:', auth ? 'OK' : 'NULL')
-      console.log('   SPREADSHEET_ID:', SPREADSHEET_ID || 'EMPTY')
-      console.log('    ', row.join(' | '))
-    }
 
-    if (delivery === 'none' && sheetSaved) {
-      delivery = 'google_sheets'
-    }
+      // Append lead row
+      console.log('📝 Appending lead row...')
+      await sheets.spreadsheets.values.append({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${SHEET_NAME}!A:AG`,
+        valueInputOption: 'USER_ENTERED',
+        insertDataOption: 'INSERT_ROWS',
+        requestBody: {
+          values: [row],
+        },
+      })
 
-    // ── 2. Send email notification when n8n is not handling the lead ──
-    if (delivery !== 'n8n') {
-      try {
-        await sendEmailNotification(body)
-      } catch (emailErr) {
-        console.error('❌ Email notification error:', emailErr.message)
-      }
+      sheetSaved = true
+      console.log(`✅ Lead saved to Google Sheets: ${firstName} ${lastName} (${lead_score})`)
+    } catch (sheetErr) {
+      console.error('❌ Google Sheets Error:', sheetErr.message)
+      console.error('❌ Full error:', JSON.stringify(sheetErr.errors || sheetErr.response?.data || sheetErr, null, 2))
     }
+  } else {
+    console.log('⚠️  Google Sheets not configured — lead logged locally:')
+    console.log('   auth:', auth ? 'OK' : 'NULL')
+    console.log('   SPREADSHEET_ID:', SPREADSHEET_ID || 'EMPTY')
+    console.log('    ', row.join(' | '))
+  }
+
+  if (delivery === 'none' && sheetSaved) {
+    delivery = 'google_sheets'
+  }
+
+  if (delivery === 'none' && databaseSaved) {
+    delivery = 'database'
+  }
+
+  // ── 2. Send email notification when n8n is not handling the lead ──
+  if (delivery !== 'n8n') {
+    try {
+      await sendEmailNotification(body)
+    } catch (emailErr) {
+      console.error('❌ Email notification error:', emailErr.message)
+    }
+  }
 
   return {
     success: true,
     lead_score: leadRecord.segment,
+    database_saved: databaseSaved,
     sheet_saved: sheetSaved,
     delivery,
     lead_id: leadRecord.lead_id,
