@@ -136,6 +136,7 @@ function PhoneInput({ value, onChange, hasError, onClearError }) {
           className="phone-country-btn"
           onClick={() => setDropdownOpen(!dropdownOpen)}
           aria-label="Land wählen"
+          data-testid="quiz-phone-country"
         >
           <span className="phone-flag">{country.flag}</span>
           <span className="phone-dial">{country.dial}</span>
@@ -149,6 +150,7 @@ function PhoneInput({ value, onChange, hasError, onClearError }) {
           value={localNumber}
           onChange={handleInput}
           autoComplete="tel-national"
+          data-testid="quiz-phone"
         />
       </div>
       {dropdownOpen && (
@@ -201,19 +203,23 @@ const AUTO_ADVANCE_DELAY = 350 // ms — brief flash to show selection
 /* ============================================
    Reusable Radio Option with SVG Icon
    ============================================ */
-function RadioOption({ iconKey, text, selected, onClick }) {
+function RadioOption({ iconKey, text, selected, onClick, testId }) {
   const IconFn = QUIZ_ICONS[iconKey]
   return (
-    <div
+    <button
+      type="button"
       className={`radio-option${selected ? ' selected' : ''}`}
       onClick={onClick}
+      aria-pressed={selected}
+      aria-label={text}
+      data-testid={testId}
     >
       <div className="radio-option-icon">
         {IconFn ? IconFn({ size: 22, strokeWidth: 1.5 }) : null}
       </div>
       <div className="radio-option-text">{text}</div>
       <div className="radio-dot" />
-    </div>
+    </button>
   )
 }
 
@@ -236,6 +242,7 @@ export default function Quiz() {
   const demoParam = searchParams.get('demo')
   const demoScenario = DEMO_SCENARIOS[demoParam] ? getDemoScenario(demoParam) : null
   const isDemoMode = Boolean(demoScenario)
+  const shouldWriteDemoLead = isDemoMode && searchParams.get('backend') === '1'
 
   const [step, setStep] = useState(isPreselected ? 2 : 1)
   const [answers, setAnswers] = useState({
@@ -413,8 +420,8 @@ export default function Quiz() {
     setSubmittedInstantly(true)
 
     // Demo-safe runs are for recording and do not call the real backend.
-    // Live runs queue the backend request while the user already sees the thank-you state.
-    if (!isDemoMode) {
+    // Add ?backend=1 to a demo URL when an agent needs to create a test lead.
+    if (!isDemoMode || shouldWriteDemoLead) {
       sendLeadInBackground(leadData)
     }
 
@@ -451,6 +458,7 @@ export default function Quiz() {
               <p>
                 Der passende Demo-Pfad ist vorausgewählt. Klicke die markierten
                 Antworten durch; danach zeigt die Backend-Konsole den E-Mail-Draft.
+                {shouldWriteDemoLead ? ' Dieser Demo-Lauf schreibt auch einen Test-Lead in die Datenbank.' : ''}
               </p>
             </div>
           )}
@@ -472,10 +480,14 @@ export default function Quiz() {
               <h3>Welche Wohnung interessiert Sie?</h3>
               <div className="object-cards">
                 {OBJECTS.map((obj) => (
-                  <div
+                  <button
+                    type="button"
                     key={obj.value}
                     className={`object-card${answers.wohnung === obj.value ? ' selected' : ''}`}
                     onClick={() => handleObjectClick(obj.value)}
+                    aria-pressed={answers.wohnung === obj.value}
+                    aria-label={obj.title}
+                    data-testid={`quiz-object-${obj.value}`}
                   >
                     <div className="object-card-icon">
                       <obj.Icon size={26} strokeWidth={1.5} />
@@ -489,7 +501,7 @@ export default function Quiz() {
                         <IconCheck size={14} strokeWidth={2.5} />
                       )}
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -507,11 +519,12 @@ export default function Quiz() {
                     text={opt.text}
                     selected={answers.zeitrahmen === opt.value}
                     onClick={() => handleZeitrahmenClick(opt.value)}
+                    testId={`quiz-zeitrahmen-${opt.value}`}
                   />
                 ))}
               </div>
               <div className="quiz-nav-compact">
-                <button className="btn-back-sm" onClick={() => goToStep(1)}>← Zurück</button>
+                <button type="button" className="btn-back-sm" onClick={() => goToStep(1)}>← Zurück</button>
               </div>
             </div>
           )}
@@ -528,11 +541,12 @@ export default function Quiz() {
                     text={opt.text}
                     selected={answers.eigenkapital === opt.value}
                     onClick={() => handleEigenkapitalClick(opt.value)}
+                    testId={`quiz-eigenkapital-${opt.value}`}
                   />
                 ))}
               </div>
               <div className="quiz-nav-compact">
-                <button className="btn-back-sm" onClick={() => goToStep(2)}>← Zurück</button>
+                <button type="button" className="btn-back-sm" onClick={() => goToStep(2)}>← Zurück</button>
               </div>
             </div>
           )}
@@ -549,11 +563,12 @@ export default function Quiz() {
                     text={opt.text}
                     selected={answers.finanzierung === opt.value}
                     onClick={() => handleFinanzierungClick(opt.value)}
+                    testId={`quiz-finanzierung-${opt.value}`}
                   />
                 ))}
               </div>
               <div className="quiz-nav-compact">
-                <button className="btn-back-sm" onClick={() => goToStep(3)}>← Zurück</button>
+                <button type="button" className="btn-back-sm" onClick={() => goToStep(3)}>← Zurück</button>
               </div>
             </div>
           )}
@@ -568,6 +583,7 @@ export default function Quiz() {
                     <label htmlFor="firstName">Vorname *</label>
                     <input
                       type="text" id="firstName" placeholder="Max"
+                      data-testid="quiz-first-name"
                       className={errors.firstName ? 'error' : ''}
                       value={formData.firstName}
                       onChange={(e) => { setFormData((f) => ({ ...f, firstName: e.target.value })); setErrors((er) => ({ ...er, firstName: false })) }}
@@ -578,6 +594,7 @@ export default function Quiz() {
                     <label htmlFor="lastName">Nachname *</label>
                     <input
                       type="text" id="lastName" placeholder="Mustermann"
+                      data-testid="quiz-last-name"
                       className={errors.lastName ? 'error' : ''}
                       value={formData.lastName}
                       onChange={(e) => { setFormData((f) => ({ ...f, lastName: e.target.value })); setErrors((er) => ({ ...er, lastName: false })) }}
@@ -588,6 +605,7 @@ export default function Quiz() {
                     <label htmlFor="email">E-Mail *</label>
                     <input
                       type="email" id="email" placeholder="max@beispiel.de"
+                      data-testid="quiz-email"
                       className={errors.email ? 'error' : ''}
                       value={formData.email}
                       onChange={(e) => { setFormData((f) => ({ ...f, email: e.target.value })); setErrors((er) => ({ ...er, email: false })) }}
@@ -610,6 +628,7 @@ export default function Quiz() {
                     <div className="checkbox-group">
                       <input
                         type="checkbox" id="consent"
+                        data-testid="quiz-consent"
                         checked={formData.consent}
                         onChange={(e) => { setFormData((f) => ({ ...f, consent: e.target.checked })); setErrors((er) => ({ ...er, consent: false })) }}
                       />
@@ -627,7 +646,7 @@ export default function Quiz() {
                   </div>
                 </div>
                 <div className="quiz-nav" style={{ flexDirection: 'column', gap: 0 }}>
-                  <button type="submit" className="btn-submit" disabled={submitting}>
+                  <button type="submit" className="btn-submit" disabled={submitting} data-testid="quiz-submit">
                     {submitting ? 'Wird gesendet...' : 'Exposé kostenlos anfordern →'}
                   </button>
                   <p className="submit-trust">
@@ -639,7 +658,7 @@ export default function Quiz() {
                 </div>
               </form>
               <div className="quiz-nav-compact" style={{ marginTop: 6 }}>
-                <button className="btn-back-sm" onClick={() => goToStep(underqualified && !answers.finanzierung ? 3 : 4)}>
+                <button type="button" className="btn-back-sm" onClick={() => goToStep(underqualified && !answers.finanzierung ? 3 : 4)}>
                   ← Zurück
                 </button>
               </div>
@@ -664,10 +683,10 @@ export default function Quiz() {
               ))}
             </ul>
             <div className="modal-buttons">
-              <button className="modal-btn-primary" onClick={modalContinue}>
+              <button type="button" className="modal-btn-primary" onClick={modalContinue} data-testid="quiz-modal-continue">
                 Trotzdem Exposé anfordern
               </button>
-              <button className="modal-btn-secondary" onClick={modalAlternative}>
+              <button type="button" className="modal-btn-secondary" onClick={modalAlternative} data-testid="quiz-modal-alternative">
                 Beratung zu Alternativen
               </button>
             </div>
