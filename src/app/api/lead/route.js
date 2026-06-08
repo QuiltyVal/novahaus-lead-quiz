@@ -777,6 +777,13 @@ function buildCustomerEmailHtml(leadRecord) {
   `
 }
 
+function resolveBcc(to) {
+  const bcc = LEAD_EMAIL_BCC.trim()
+  if (!bcc) return undefined
+  if (bcc.toLowerCase() === String(to || '').trim().toLowerCase()) return undefined
+  return bcc
+}
+
 async function sendViaResend({ to, subject, text, html, originalTo }) {
   if (!RESEND_API_KEY) {
     throw new Error('RESEND_API_KEY is not configured')
@@ -791,7 +798,8 @@ async function sendViaResend({ to, subject, text, html, originalTo }) {
   }
 
   if (LEAD_EMAIL_REPLY_TO) payload.reply_to = LEAD_EMAIL_REPLY_TO
-  if (LEAD_EMAIL_BCC) payload.bcc = LEAD_EMAIL_BCC
+  const bcc = resolveBcc(to)
+  if (bcc) payload.bcc = bcc
   if (originalTo && originalTo !== to) {
     payload.headers = {
       'X-NovaHaus-Original-To': originalTo,
@@ -831,7 +839,7 @@ async function sendViaSmtp({ to, subject, text, html }) {
   const result = await transporter.sendMail({
     from: LEAD_EMAIL_FROM || `"${BRAND_NAME}" <${SMTP_USER}>`,
     to,
-    bcc: LEAD_EMAIL_BCC || undefined,
+    bcc: resolveBcc(to),
     replyTo: LEAD_EMAIL_REPLY_TO || undefined,
     subject,
     text,
