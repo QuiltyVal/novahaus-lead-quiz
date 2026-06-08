@@ -117,7 +117,8 @@ DEMO_LEAD_TARGET_EMAIL=you@example.com npm run demo:leads
 DEMO_LEAD_API_URL=https://your-site.example.com/api/lead npm run demo:leads
 ```
 
-By default, demo leads use reserved `example.com` addresses and create Gmail drafts only. If auto-send is added later, use `DEMO_LEAD_TARGET_EMAIL` so demo emails can only go to a controlled inbox.
+By default, demo leads use reserved `example.com` addresses and do not send real customer emails.
+If direct email sending is enabled, use `DEMO_LEAD_TARGET_EMAIL` so demo emails can only go to a controlled inbox.
 
 ## AI Email Drafts
 
@@ -163,6 +164,40 @@ GEMINI_API_KEY=your-key
 
 If the selected provider is not configured or returns invalid content, `/api/lead` falls back to the static draft so the pipeline still writes the lead, appends the email queue row, and creates a Gmail draft.
 
+## Direct Customer Email
+
+The app can send the prepared follow-up email directly from `/api/lead`, independent from n8n, Google Sheets, or Gmail OAuth.
+
+Default safe mode:
+
+```bash
+LEAD_EMAIL_MODE=off
+```
+
+Enable direct sending after the sender domain is verified:
+
+```bash
+LEAD_EMAIL_MODE=send
+LEAD_EMAIL_PROVIDER=resend
+RESEND_API_KEY=your-key
+LEAD_EMAIL_FROM="NovaHaus Immobilien <leads@novahaus.valquilty.com>"
+LEAD_EMAIL_REPLY_TO=me@valquilty.com
+```
+
+SMTP is also supported:
+
+```bash
+LEAD_EMAIL_MODE=send
+LEAD_EMAIL_PROVIDER=smtp
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your-user
+SMTP_PASS=your-password
+LEAD_EMAIL_FROM="NovaHaus Immobilien <leads@novahaus.valquilty.com>"
+```
+
+Demo or reserved `example.com` leads are skipped unless `DEMO_LEAD_TARGET_EMAIL` is set. This prevents test/demo leads from sending to fake addresses.
+
 ## n8n Workflow
 
 The workflow files and setup notes are in:
@@ -181,6 +216,7 @@ Webhook -> Verify secret -> Normalize + qualify lead -> Append Leads row -> Rout
 
 This is intentionally scoped as a portfolio/prototype system, not a production CRM:
 
-- Gmail creates drafts for review, not automatic outreach by default.
+- Direct customer email is disabled by default and must be explicitly enabled with `LEAD_EMAIL_MODE=send`.
+- Gmail/n8n drafts are optional workflow automation, not the core storage path.
 - The call-center step is represented as a structured handoff path.
-- AI-generated email drafts are supported through `AI_EMAIL_PROVIDER=gemini`, `openrouter`, or `openrouter_auto_free`; guarded demo auto-send can be added later.
+- AI-generated email drafts are supported through `AI_EMAIL_PROVIDER=gemini`, `openrouter`, or `openrouter_auto_free`.

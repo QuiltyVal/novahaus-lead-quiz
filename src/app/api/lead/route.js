@@ -20,6 +20,15 @@ const SMTP_USER = process.env.SMTP_USER || ''
 const SMTP_PASS = process.env.SMTP_PASS || ''
 const NOTIFY_EMAIL = process.env.NOTIFY_EMAIL || '' // where to send lead notifications
 
+// Direct customer follow-up email (optional; independent from n8n/Gmail)
+const LEAD_EMAIL_MODE = (process.env.LEAD_EMAIL_MODE || 'off').toLowerCase()
+const LEAD_EMAIL_PROVIDER = (process.env.LEAD_EMAIL_PROVIDER || '').toLowerCase()
+const LEAD_EMAIL_FROM = process.env.LEAD_EMAIL_FROM || ''
+const LEAD_EMAIL_REPLY_TO = process.env.LEAD_EMAIL_REPLY_TO || ''
+const LEAD_EMAIL_BCC = process.env.LEAD_EMAIL_BCC || ''
+const RESEND_API_KEY = process.env.RESEND_API_KEY || ''
+const DEMO_LEAD_TARGET_EMAIL = process.env.DEMO_LEAD_TARGET_EMAIL || ''
+
 // n8n Lead Collector (primary destination for the AI Lead-to-Call MVP)
 const N8N_LEAD_WEBHOOK_URL = process.env.N8N_LEAD_WEBHOOK_URL || ''
 const N8N_LEAD_WEBHOOK_SECRET = process.env.N8N_LEAD_WEBHOOK_SECRET || ''
@@ -700,6 +709,182 @@ async function sendEmailNotification(leadData) {
   console.log(`📧 Email notification sent to ${NOTIFY_EMAIL}`)
 }
 
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function textToHtml(text) {
+  return escapeHtml(text)
+    .split('\n')
+    .map((line) => line || '&nbsp;')
+    .join('<br>')
+}
+
+function resolveLeadEmailRecipient(leadRecord) {
+  const email = String(leadRecord.email || '').trim()
+  const isDemoLead = Boolean(leadRecord.raw?.demo_mode)
+  const isReservedExampleAddress = /@example\.(com|org|net)$/i.test(email)
+
+  if ((isDemoLead || isReservedExampleAddress) && DEMO_LEAD_TARGET_EMAIL) {
+    return {
+      to: DEMO_LEAD_TARGET_EMAIL,
+      originalTo: email,
+      redirected: true,
+    }
+  }
+
+  if (isDemoLead || isReservedExampleAddress) {
+    return {
+      to: '',
+      originalTo: email,
+      redirected: false,
+      skipReason: 'demo_or_example_email',
+    }
+  }
+
+  return {
+    to: email,
+    originalTo: email,
+    redirected: false,
+  }
+}
+
+function resolveLeadEmailProvider() {
+  if (LEAD_EMAIL_PROVIDER) return LEAD_EMAIL_PROVIDER
+  if (RESEND_API_KEY) return 'resend'
+  if (SMTP_HOST && SMTP_USER && SMTP_PASS) return 'smtp'
+  return 'none'
+}
+
+function buildCustomerEmailHtml(leadRecord) {
+  const preheader = `${BRAND_NAME}: ${leadRecord.email_subject}`
+  return `
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(preheader)}</div>
+    <main style="font-family: Arial, Helvetica, sans-serif; color: #18212b; line-height: 1.55; max-width: 640px;">
+      <div style="white-space: normal; font-size: 16px;">
+        ${textToHtml(leadRecord.email_draft)}
+      </div>
+      <hr style="border: 0; border-top: 1px solid #e5e0d8; margin: 28px 0;">
+      <p style="font-size: 13px; color: #66707d; margin: 0;">
+        Diese Nachricht wurde auf Basis Ihrer Anfrage über die NovaHaus Quiz-Landingpage vorbereitet.
+      </p>
+    </main>
+  `
+}
+
+async function sendViaResend({ to, subject, text, html, originalTo }) {
+  if (!RESEND_API_KEY) {
+    throw new Error('RESEND_API_KEY is not configured')
+  }
+
+  const payload = {
+    from: LEAD_EMAIL_FROM,
+    to,
+    subject,
+    text,
+    html,
+  }
+
+  if (LEAD_EMAIL_REPLY_TO) payload.reply_to = LEAD_EMAIL_REPLY_TO
+  if (LEAD_EMAIL_BCC) payload.bcc = LEAD_EMAIL_BCC
+  if (originalTo && originalTo !== to) {
+    payload.headers = {
+      'X-NovaHaus-Original-To': originalTo,
+    }
+  }
+
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  })
+
+  const data = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    throw new Error(`Resend failed with status ${response.status}: ${JSON.stringify(data).slice(0, 300)}`)
+  }
+
+  return data?.id || ''
+}
+
+async function sendViaSmtp({ to, subject, text, html }) {
+  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) {
+    throw new Error('SMTP_HOST, SMTP_USER, and SMTP_PASS are not configured')
+  }
+
+  const transporter = nodemailer.createTransport({
+    host: SMTP_HOST,
+    port: SMTP_PORT,
+    secure: SMTP_PORT === 465,
+    auth: { user: SMTP_USER, pass: SMTP_PASS },
+  })
+
+  const result = await transporter.sendMail({
+    from: LEAD_EMAIL_FROM || `"${BRAND_NAME}" <${SMTP_USER}>`,
+    to,
+    bcc: LEAD_EMAIL_BCC || undefined,
+    replyTo: LEAD_EMAIL_REPLY_TO || undefined,
+    subject,
+    text,
+    html,
+  })
+
+  return result.messageId || ''
+}
+
+async function sendCustomerFollowUpEmail(leadRecord) {
+  if (LEAD_EMAIL_MODE !== 'send') {
+    return { sent: false, reason: `mode_${LEAD_EMAIL_MODE}` }
+  }
+
+  if (!LEAD_EMAIL_FROM && !SMTP_USER) {
+    return { sent: false, reason: 'from_not_configured' }
+  }
+
+  const recipient = resolveLeadEmailRecipient(leadRecord)
+  if (!recipient.to) {
+    return { sent: false, reason: recipient.skipReason || 'recipient_not_configured' }
+  }
+
+  if (!leadRecord.consent_contact) {
+    return { sent: false, reason: 'missing_contact_consent' }
+  }
+
+  const provider = resolveLeadEmailProvider()
+  if (!['resend', 'smtp'].includes(provider)) {
+    return { sent: false, reason: 'provider_not_configured' }
+  }
+
+  const message = {
+    to: recipient.to,
+    originalTo: recipient.originalTo,
+    subject: leadRecord.email_subject,
+    text: leadRecord.email_draft,
+    html: buildCustomerEmailHtml(leadRecord),
+  }
+
+  const messageId = provider === 'resend'
+    ? await sendViaResend(message)
+    : await sendViaSmtp(message)
+
+  return {
+    sent: true,
+    provider,
+    message_id: messageId,
+    to: recipient.to,
+    redirected: recipient.redirected,
+  }
+}
+
 /* ============================================
    POST /api/lead
    ============================================ */
@@ -716,6 +901,7 @@ async function processLead(body, requestMeta = {}) {
   const leadRecord = await attachAIEmailDraft(buildLeadRecord(body, { clientIp, userAgent }))
   let delivery = 'none'
   let databaseSaved = false
+  let customerEmail = { sent: false, reason: 'not_attempted' }
 
   try {
     const databaseResult = await saveLeadRecord(leadRecord)
@@ -728,6 +914,18 @@ async function processLead(body, requestMeta = {}) {
     }
   } catch (databaseErr) {
     console.error('❌ Database lead save error:', databaseErr.message)
+  }
+
+  try {
+    customerEmail = await sendCustomerFollowUpEmail(leadRecord)
+    if (customerEmail.sent) {
+      console.log(`✅ Customer follow-up email sent via ${customerEmail.provider}: ${leadRecord.email}`)
+    } else {
+      console.log(`⚠️  Customer follow-up email skipped: ${customerEmail.reason}`)
+    }
+  } catch (customerEmailErr) {
+    customerEmail = { sent: false, reason: 'send_error', error: customerEmailErr.message }
+    console.error('❌ Customer follow-up email error:', customerEmailErr.message)
   }
 
   try {
@@ -844,6 +1042,7 @@ async function processLead(body, requestMeta = {}) {
     priority: leadRecord.priority,
     next_action: leadRecord.next_action,
     next_best_action: leadRecord.next_best_action,
+    customer_email: customerEmail,
   }
 }
 
