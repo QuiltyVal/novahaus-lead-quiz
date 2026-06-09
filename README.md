@@ -5,15 +5,16 @@ Portfolio MVP for a real-estate lead funnel:
 ```mermaid
 flowchart LR
   A["Landing quiz"] --> B["Next.js /api/lead"]
-  B --> C["n8n lead webhook"]
-  C --> D["Lead qualification"]
-  D --> E["Google Sheet: Leads"]
-  D --> F["Google Sheet: Email Queue"]
-  F --> G["Gmail draft"]
-  D --> H["Call-center handoff path"]
+  B --> C["Lead qualification"]
+  C --> D["Postgres Lead Inbox"]
+  C --> E["Resend customer email"]
+  C --> F["Optional n8n workflow"]
+  F --> G["Google Sheet: Leads"]
+  F --> H["Gmail draft"]
+  C --> I["Call-center handoff path"]
 ```
 
-The project demonstrates a fast-response sales operations workflow: a quiz captures intent, the lead is qualified, CRM-like rows are created in Google Sheets, and a review-ready Gmail draft is prepared for follow-up.
+The project demonstrates a fast-response sales operations workflow: a quiz captures intent, the lead is qualified, stored in an internal Lead Inbox, and routed to either direct email follow-up, human-reviewed drafts, or a call-center handoff.
 
 ## Administration
 
@@ -27,6 +28,12 @@ Sales positioning, demo flow, packages, and outreach copy are in:
 
 ```text
 docs/SALES_PLAYBOOK.md
+```
+
+SaaS planning and the `/api/lead` security hardening backlog are in:
+
+```text
+docs/SAAS_ROADMAP.md
 ```
 
 B2B sales landing page:
@@ -180,7 +187,7 @@ Enable direct sending after the sender domain is verified:
 LEAD_EMAIL_MODE=send
 LEAD_EMAIL_PROVIDER=resend
 RESEND_API_KEY=your-key
-LEAD_EMAIL_FROM="NovaHaus Immobilien <leads@novahaus.valquilty.com>"
+LEAD_EMAIL_FROM="NovaHaus Immobilien <leads@mail.valquilty.com>"
 LEAD_EMAIL_REPLY_TO=me@valquilty.com
 ```
 

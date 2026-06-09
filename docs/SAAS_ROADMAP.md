@@ -9,7 +9,8 @@ The SaaS version should be built in small layers, so the demo keeps working whil
 Flow:
 
 ```text
-Landing page + quiz -> /api/lead -> n8n -> Google Sheets -> Gmail Draft
+Landing page + quiz -> /api/lead -> Postgres Lead Inbox -> Resend customer email
+                                 -> optional n8n -> Google Sheets -> Gmail Draft
 ```
 
 The first SaaS foundation is now `src/lib/tenantConfig.js`.
@@ -23,6 +24,34 @@ It centralizes:
 - lead scoring rules
 - workflow segment rules
 - email signature and AI drafting rules
+
+## Phase 0.5: `/api/lead` Hardening Backlog
+
+Source: Fable/Claude audit, saved on 2026-06-09.
+
+Scope:
+
+- `src/app/api/lead/route.js`
+- `src/components/Quiz.jsx`
+- lead scoring and qualification helpers used by the quiz/API flow
+
+Constraint: the real visitor quiz behavior must not change. These changes should only make the lead endpoint safer, more predictable, and easier to test.
+
+Acceptance checklist:
+
+- [ ] Validate input before any side effects: email format, non-empty `firstName`, and `wohnung` / `zeitrahmen` / `eigenkapital` / `finanzierung` values restricted to `tenantConfig`.
+- [ ] Return `400` for invalid requests and do not save the lead or send any email.
+- [ ] Add IP-based rate limiting for `/api/lead`: around 5 requests per minute, returning `429` above the limit. MVP implementation can use an in-memory `Map` without external services.
+- [ ] Add a hidden honeypot field to `Quiz.jsx`. If filled, return `200` but skip lead processing so the bot does not learn the rule.
+- [ ] Stop hardcoding `consent_contact` and `consent_data_processing` as `true` in `buildLeadRecord`.
+- [ ] Pass the actual quiz consent checkbox value from `Quiz.jsx`; without consent, return `400`.
+- [ ] Deduplicate by `email + tenant_id` within 24 hours: save the new record with a duplicate marker, but do not send another customer email.
+- [ ] Remove PII from logs: do not log lead name, email, phone, or private-key diagnostics. Log only `lead_id`, segment, and non-sensitive status.
+- [ ] In `LEAD_EMAIL_MODE=send`, send only the safe template email from `buildEmailDraft`.
+- [ ] Keep AI-generated text limited to human-reviewed Gmail Drafts through n8n; never use AI-generated copy for direct auto-send.
+- [ ] Add tests for `calculateLeadScore` and `getSalesQualification` so duplicated scoring logic cannot silently diverge.
+
+Implementation note: prioritize validation, consent, log cleanup, and direct-email safety first because they reduce live endpoint risk without changing the user-facing quiz flow.
 
 ## Phase 1: Productized Service
 
