@@ -211,6 +211,8 @@ export async function saveLeadRecord(leadRecord) {
         status: leadRecord.status,
         priority: leadRecord.priority,
         next_action: leadRecord.next_action,
+        duplicate: Boolean(leadRecord.duplicate),
+        duplicate_of_lead_id: leadRecord.duplicate_of_lead_id || '',
       }),
     ]
   )
@@ -244,6 +246,33 @@ export async function saveLeadRecord(leadRecord) {
   return { saved: true, lead_id: leadRecord.lead_id }
 }
 
+export async function findRecentLeadByEmailTenant({ email, tenantId, withinHours = 24 }) {
+  if (!isDatabaseConfigured()) {
+    return null
+  }
+
+  const normalizedEmail = String(email || '').trim().toLowerCase()
+  if (!normalizedEmail || !tenantId) {
+    return null
+  }
+
+  const hours = Math.min(Math.max(Number.parseInt(withinHours, 10) || 24, 1), 168)
+  const result = await query(
+    `
+      SELECT lead_id, created_at
+      FROM leads
+      WHERE tenant_id = $1
+        AND lower(email) = $2
+        AND created_at >= now() - ($3::int * interval '1 hour')
+      ORDER BY created_at DESC
+      LIMIT 1
+    `,
+    [tenantId, normalizedEmail, hours]
+  )
+
+  return result.rows[0] || null
+}
+
 export async function listLeads({ limit = 100 } = {}) {
   if (!isDatabaseConfigured()) {
     return { configured: false, leads: [] }
@@ -261,4 +290,3 @@ export async function listLeads({ limit = 100 } = {}) {
 
   return { configured: true, leads: result.rows }
 }
-

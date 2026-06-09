@@ -257,6 +257,7 @@ export default function Quiz() {
     email: demoScenario?.email || '',
     phone: demoScenario?.phone || '',
     consent: false,
+    companyWebsite: '',
   })
   const [errors, setErrors] = useState({})
   const [showModal, setShowModal] = useState(false)
@@ -578,6 +579,23 @@ export default function Quiz() {
             <div className="quiz-step" key={`s5-${animKey}`}>
               <h3>Wohin dürfen wir Ihr Exposé senden?</h3>
               <form onSubmit={handleSubmit} noValidate>
+                <input
+                  type="text"
+                  name="companyWebsite"
+                  tabIndex={-1}
+                  autoComplete="off"
+                  value={formData.companyWebsite}
+                  onChange={(e) => setFormData((f) => ({ ...f, companyWebsite: e.target.value }))}
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    left: '-10000px',
+                    width: 1,
+                    height: 1,
+                    opacity: 0,
+                    pointerEvents: 'none',
+                  }}
+                />
                 <div className="form-grid">
                   <div className="form-group">
                     <label htmlFor="firstName">Vorname *</label>

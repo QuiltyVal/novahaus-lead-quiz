@@ -4,7 +4,9 @@ import { randomUUID } from 'crypto'
 import { google } from 'googleapis'
 import nodemailer from 'nodemailer'
 import { DEFAULT_TENANT_CONFIG, optionMap } from '@/lib/tenantConfig'
-import { saveLeadRecord } from '@/lib/leadStore'
+import { calculateLeadScore } from '@/lib/leadScoring'
+import { getSalesQualification } from '@/lib/leadQualification'
+import { findRecentLeadByEmailTenant, saveLeadRecord } from '@/lib/leadStore'
 
 /* ============================================
    CONFIG — from env variables
@@ -46,6 +48,10 @@ const FREE_LLM_MODELS_URL = process.env.FREE_LLM_MODELS_URL || 'https://shir-man
 const FREE_LLM_FALLBACK_MODEL = process.env.FREE_LLM_FALLBACK_MODEL || 'openrouter/free'
 const TENANT_CONFIG = DEFAULT_TENANT_CONFIG
 const BRAND_NAME = TENANT_CONFIG.brand.name
+const RATE_LIMIT_WINDOW_MS = 60 * 1000
+const RATE_LIMIT_MAX_REQUESTS = 5
+const RATE_LIMIT_BUCKETS = globalThis.__novahausLeadRateLimitBuckets || new Map()
+globalThis.__novahausLeadRateLimitBuckets = RATE_LIMIT_BUCKETS
 
 /**
  * Build Google Auth from env.
@@ -68,20 +74,10 @@ function getAuth() {
   const rawKey = process.env.GOOGLE_PRIVATE_KEY || process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || ''
   const key = parsePrivateKey(rawKey)
 
-  console.log('🔑 getAuth debug:')
-  console.log('   email:', email || '❌ EMPTY')
-  console.log('   rawKey length:', rawKey.length)
-  console.log('   parsed key length:', key.length)
-  console.log('   parsed key starts with BEGIN:', key.startsWith('-----BEGIN'))
-  console.log('   parsed key has newlines:', key.includes('\n'))
-  console.log('   parsed key line count:', key.split('\n').length)
-
   if (!email || !key || !key.startsWith('-----BEGIN')) {
-    console.log('⚠️ getAuth: FAILED — missing or invalid credentials')
+    console.log('Google Sheets auth not configured')
     return null
   }
-
-  console.log('✅ getAuth: creating JWT...')
 
   return new google.auth.JWT({
     email,
@@ -97,6 +93,11 @@ const WOHNUNG_LABELS = optionMap(TENANT_CONFIG.quiz.propertyOptions, 'label')
 const ZEITRAHMEN_LABELS = optionMap(TENANT_CONFIG.quiz.purchaseTimelineOptions, 'label')
 const EIGENKAPITAL_LABELS = optionMap(TENANT_CONFIG.quiz.equityBucketOptions, 'label')
 const FINANZIERUNG_LABELS = optionMap(TENANT_CONFIG.quiz.financingStatusOptions, 'label')
+const VALID_WOHNUNG = new Set(TENANT_CONFIG.quiz.propertyOptions.map((option) => option.value))
+const VALID_ZEITRAHMEN = new Set(TENANT_CONFIG.quiz.purchaseTimelineOptions.map((option) => option.value))
+const VALID_EIGENKAPITAL = new Set(TENANT_CONFIG.quiz.equityBucketOptions.map((option) => option.value))
+const VALID_FINANZIERUNG = new Set(TENANT_CONFIG.quiz.financingStatusOptions.map((option) => option.value))
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const SCORE_EMOJIS = {
   hot: '🔥 HOT',
@@ -145,32 +146,115 @@ function addMinutes(isoDate, minutes) {
   return new Date(new Date(isoDate).getTime() + minutes * 60 * 1000).toISOString()
 }
 
-function getSalesQualification({ leadScore, zeitrahmen, eigenkapital, finanzierung, underqualified }) {
-  const { scoring, workflow } = TENANT_CONFIG
-  const hasMinimumCapital = scoring.warm.equityBuckets.includes(eigenkapital)
-  const hasStrongCapital = scoring.hot.equityBuckets.includes(eigenkapital)
-  const isActiveBuyer = scoring.warm.purchaseTimelines.includes(zeitrahmen)
-  const financingReady = finanzierung === scoring.hot.financingStatus
+function trimString(value) {
+  return String(value || '').trim()
+}
 
-  if (underqualified || scoring.notQualified.equityBuckets.includes(eigenkapital)) {
-    return workflow.segments.not_qualified
+function isConsentGiven(value) {
+  if (value === true) return true
+  return ['true', '1', 'yes', 'on'].includes(trimString(value).toLowerCase())
+}
+
+function isBooleanTrue(value) {
+  if (value === true) return true
+  return trimString(value).toLowerCase() === 'true'
+}
+
+function hasHoneypotValue(body) {
+  return Boolean(
+    trimString(body.companyWebsite) ||
+    trimString(body.website) ||
+    trimString(body.honeypot)
+  )
+}
+
+function validateLeadInput(body) {
+  const normalized = {
+    ...body,
+    firstName: trimString(body.firstName),
+    lastName: trimString(body.lastName),
+    email: trimString(body.email).toLowerCase(),
+    phone: trimString(body.phone),
+    wohnung: trimString(body.wohnung),
+    zeitrahmen: trimString(body.zeitrahmen),
+    eigenkapital: trimString(body.eigenkapital),
+    finanzierung: trimString(body.finanzierung),
+    consent: isConsentGiven(body.consent),
+    underqualified: isBooleanTrue(body.underqualified),
+  }
+  const errors = {}
+
+  if (!normalized.firstName) errors.firstName = 'required'
+  if (!EMAIL_PATTERN.test(normalized.email)) errors.email = 'invalid'
+  if (!VALID_WOHNUNG.has(normalized.wohnung)) errors.wohnung = 'invalid'
+  if (!VALID_ZEITRAHMEN.has(normalized.zeitrahmen)) errors.zeitrahmen = 'invalid'
+  if (!VALID_EIGENKAPITAL.has(normalized.eigenkapital)) errors.eigenkapital = 'invalid'
+  if (!VALID_FINANZIERUNG.has(normalized.finanzierung)) errors.finanzierung = 'invalid'
+  if (!normalized.consent) errors.consent = 'required'
+
+  normalized.lead_score = calculateLeadScore(normalized, TENANT_CONFIG)
+
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors,
+    normalized,
+  }
+}
+
+function checkRateLimit(clientIp) {
+  const now = Date.now()
+  const key = clientIp || 'unknown'
+
+  if (RATE_LIMIT_BUCKETS.size > 1000) {
+    for (const [bucketKey, bucket] of RATE_LIMIT_BUCKETS.entries()) {
+      if (bucket.resetAt <= now) RATE_LIMIT_BUCKETS.delete(bucketKey)
+    }
   }
 
-  if (
-    leadScore === 'hot' ||
-    (zeitrahmen === scoring.hot.purchaseTimeline && hasStrongCapital && financingReady)
-  ) {
-    return workflow.segments.hot
+  const bucket = RATE_LIMIT_BUCKETS.get(key)
+  if (!bucket || bucket.resetAt <= now) {
+    RATE_LIMIT_BUCKETS.set(key, {
+      count: 1,
+      resetAt: now + RATE_LIMIT_WINDOW_MS,
+    })
+    return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - 1, retryAfter: 0 }
   }
 
-  if (
-    leadScore === 'warm' ||
-    (isActiveBuyer && hasMinimumCapital)
-  ) {
-    return workflow.segments.warm
+  if (bucket.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return {
+      allowed: false,
+      remaining: 0,
+      retryAfter: Math.max(1, Math.ceil((bucket.resetAt - now) / 1000)),
+    }
   }
 
-  return workflow.segments.cold
+  bucket.count += 1
+  return {
+    allowed: true,
+    remaining: RATE_LIMIT_MAX_REQUESTS - bucket.count,
+    retryAfter: 0,
+  }
+}
+
+function markDuplicateLead(leadRecord, duplicateLead) {
+  if (!duplicateLead) return leadRecord
+
+  return {
+    ...leadRecord,
+    duplicate: true,
+    duplicate_of_lead_id: duplicateLead.lead_id,
+    raw: {
+      ...(leadRecord.raw || {}),
+      duplicate: true,
+      duplicate_of_lead_id: duplicateLead.lead_id,
+      duplicate_detected_at: new Date().toISOString(),
+    },
+  }
+}
+
+function logLead(message, leadRecord, extra = '') {
+  const suffix = extra ? ` ${extra}` : ''
+  console.log(`${message}: lead_id=${leadRecord.lead_id} segment=${leadRecord.segment}${suffix}`)
 }
 
 function buildLeadSummary({ wohnungLabel, zeitrahmenLabel, eigenkapitalLabel, finanzierungLabel }) {
@@ -517,6 +601,7 @@ function buildLeadRecord(body, requestMeta = {}) {
     finanzierung = '',
     lead_score = 'cold',
     underqualified = false,
+    consent = false,
     source = {},
     timestamp,
   } = body
@@ -587,10 +672,12 @@ function buildLeadRecord(body, requestMeta = {}) {
     }),
     email_subject: emailDraft.email_subject,
     email_draft: emailDraft.email_draft,
+    template_email_subject: emailDraft.email_subject,
+    template_email_draft: emailDraft.email_draft,
 
-    consent_contact: true,
-    consent_data_processing: true,
-    consent_timestamp: createdAt,
+    consent_contact: Boolean(consent),
+    consent_data_processing: Boolean(consent),
+    consent_timestamp: consent ? createdAt : null,
     consent_ip: requestMeta.clientIp || '',
     consent_user_agent: requestMeta.userAgent || '',
 
@@ -706,7 +793,7 @@ async function sendEmailNotification(leadData) {
     html,
   })
 
-  console.log(`📧 Email notification sent to ${NOTIFY_EMAIL}`)
+  console.log('Email notification sent')
 }
 
 function escapeHtml(value) {
@@ -761,13 +848,13 @@ function resolveLeadEmailProvider() {
   return 'none'
 }
 
-function buildCustomerEmailHtml(leadRecord) {
-  const preheader = `${BRAND_NAME}: ${leadRecord.email_subject}`
+function buildCustomerEmailHtml({ subject, body }) {
+  const preheader = `${BRAND_NAME}: ${subject}`
   return `
     <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(preheader)}</div>
     <main style="font-family: Arial, Helvetica, sans-serif; color: #18212b; line-height: 1.55; max-width: 640px;">
       <div style="white-space: normal; font-size: 16px;">
-        ${textToHtml(leadRecord.email_draft)}
+        ${textToHtml(body)}
       </div>
       <hr style="border: 0; border-top: 1px solid #e5e0d8; margin: 28px 0;">
       <p style="font-size: 13px; color: #66707d; margin: 0;">
@@ -775,6 +862,13 @@ function buildCustomerEmailHtml(leadRecord) {
       </p>
     </main>
   `
+}
+
+function getDirectCustomerEmailTemplate(leadRecord) {
+  return {
+    subject: leadRecord.template_email_subject || leadRecord.email_subject,
+    body: leadRecord.template_email_draft || leadRecord.email_draft,
+  }
 }
 
 function resolveBcc(to) {
@@ -818,7 +912,8 @@ async function sendViaResend({ to, subject, text, html, originalTo }) {
   const data = await response.json().catch(() => ({}))
 
   if (!response.ok) {
-    throw new Error(`Resend failed with status ${response.status}: ${JSON.stringify(data).slice(0, 300)}`)
+    const providerMessage = data?.message ? `: ${String(data.message).slice(0, 160)}` : ''
+    throw new Error(`Resend failed with status ${response.status}${providerMessage}`)
   }
 
   return data?.id || ''
@@ -867,17 +962,22 @@ async function sendCustomerFollowUpEmail(leadRecord) {
     return { sent: false, reason: 'missing_contact_consent' }
   }
 
+  if (leadRecord.duplicate) {
+    return { sent: false, reason: 'duplicate_recent_lead' }
+  }
+
   const provider = resolveLeadEmailProvider()
   if (!['resend', 'smtp'].includes(provider)) {
     return { sent: false, reason: 'provider_not_configured' }
   }
 
+  const directEmail = getDirectCustomerEmailTemplate(leadRecord)
   const message = {
     to: recipient.to,
     originalTo: recipient.originalTo,
-    subject: leadRecord.email_subject,
-    text: leadRecord.email_draft,
-    html: buildCustomerEmailHtml(leadRecord),
+    subject: directEmail.subject,
+    text: directEmail.body,
+    html: buildCustomerEmailHtml(directEmail),
   }
 
   const messageId = provider === 'resend'
@@ -898,15 +998,24 @@ async function sendCustomerFollowUpEmail(leadRecord) {
    ============================================ */
 async function processLead(body, requestMeta = {}) {
   const { clientIp = '', userAgent = '' } = requestMeta
+  const baseLeadRecord = buildLeadRecord(body, { clientIp, userAgent })
+  let duplicateLead = null
 
-  const {
-    firstName,
-    lastName,
-    email,
-    lead_score,
-  } = body
+  try {
+    duplicateLead = await findRecentLeadByEmailTenant({
+      email: baseLeadRecord.email,
+      tenantId: baseLeadRecord.tenant_id,
+      withinHours: 24,
+    })
+  } catch (dedupeErr) {
+    console.error(`Lead duplicate check error: lead_id=${baseLeadRecord.lead_id} message=${dedupeErr.message}`)
+  }
 
-  const leadRecord = await attachAIEmailDraft(buildLeadRecord(body, { clientIp, userAgent }))
+  const markedLeadRecord = markDuplicateLead(baseLeadRecord, duplicateLead)
+  const shouldGenerateAIForDraftWorkflow = Boolean(N8N_LEAD_WEBHOOK_URL) && AI_EMAIL_PROVIDER !== 'template'
+  const leadRecord = shouldGenerateAIForDraftWorkflow
+    ? await attachAIEmailDraft(markedLeadRecord)
+    : markedLeadRecord
   let delivery = 'none'
   let databaseSaved = false
   let customerEmail = { sent: false, reason: 'not_attempted' }
@@ -916,50 +1025,38 @@ async function processLead(body, requestMeta = {}) {
     databaseSaved = Boolean(databaseResult.saved)
 
     if (databaseSaved) {
-      console.log(`✅ Lead saved to database: ${leadRecord.lead_id}`)
+      logLead('Lead saved to database', leadRecord, leadRecord.duplicate ? 'duplicate=true' : '')
     } else {
-      console.log(`⚠️  Database skipped: ${databaseResult.reason}`)
+      logLead('Database skipped', leadRecord, `reason=${databaseResult.reason}`)
     }
   } catch (databaseErr) {
-    console.error('❌ Database lead save error:', databaseErr.message)
+    console.error(`Database lead save error: lead_id=${leadRecord.lead_id} segment=${leadRecord.segment} message=${databaseErr.message}`)
   }
 
   try {
     customerEmail = await sendCustomerFollowUpEmail(leadRecord)
     if (customerEmail.sent) {
-      console.log(`✅ Customer follow-up email sent via ${customerEmail.provider}: ${leadRecord.email}`)
+      logLead('Customer follow-up email sent', leadRecord, `provider=${customerEmail.provider}`)
     } else {
-      console.log(`⚠️  Customer follow-up email skipped: ${customerEmail.reason}`)
+      logLead('Customer follow-up email skipped', leadRecord, `reason=${customerEmail.reason}`)
     }
   } catch (customerEmailErr) {
     customerEmail = { sent: false, reason: 'send_error', error: customerEmailErr.message }
-    console.error('❌ Customer follow-up email error:', customerEmailErr.message)
+    console.error(`Customer follow-up email error: lead_id=${leadRecord.lead_id} segment=${leadRecord.segment} message=${customerEmailErr.message}`)
   }
 
   try {
     const n8nSaved = await sendToN8n(leadRecord)
     if (n8nSaved) {
       delivery = 'n8n'
-      console.log(`✅ Lead sent to n8n: ${firstName} ${lastName} (${lead_score})`)
+      logLead('Lead sent to n8n', leadRecord)
     }
   } catch (n8nErr) {
-    console.error('❌ n8n webhook error:', n8nErr.message)
+    console.error(`n8n webhook error: lead_id=${leadRecord.lead_id} segment=${leadRecord.segment} message=${n8nErr.message}`)
     if (!SPREADSHEET_ID && !databaseSaved) {
       throw n8nErr
     }
   }
-
-  // ── Debug: log which env vars are set ──
-  console.log('📋 Lead API called — checking env vars:')
-  console.log('   GOOGLE_SERVICE_ACCOUNT_EMAIL:', process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ? '✅ SET' : '❌ NOT SET')
-  console.log('   GOOGLE_PRIVATE_KEY:', process.env.GOOGLE_PRIVATE_KEY ? `✅ SET (${process.env.GOOGLE_PRIVATE_KEY.length} chars)` : '❌ NOT SET')
-  console.log('   GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY:', process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY ? `✅ SET (${process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY.length} chars)` : '❌ NOT SET')
-  console.log('   GOOGLE_SHEET_ID:', process.env.GOOGLE_SHEET_ID ? '✅ SET' : '❌ NOT SET')
-  console.log('   GOOGLE_SHEETS_ID:', process.env.GOOGLE_SHEETS_ID ? '✅ SET' : '❌ NOT SET')
-  console.log('   N8N_LEAD_WEBHOOK_URL:', N8N_LEAD_WEBHOOK_URL ? '✅ SET' : '❌ NOT SET')
-  console.log('   SHEET_NAME resolved to:', SHEET_NAME)
-  console.log('   SPREADSHEET_ID resolved to:', SPREADSHEET_ID ? `✅ ${SPREADSHEET_ID.substring(0, 8)}...` : '❌ EMPTY')
-  console.log('   Lead data:', firstName, lastName, email, lead_score)
 
   // ── Prepare row for Google Sheets fallback ──
   const row = LEAD_SHEET_COLUMNS.map((column) => {
@@ -972,12 +1069,9 @@ async function processLead(body, requestMeta = {}) {
   const auth = delivery !== 'n8n' ? getAuth() : null
   let sheetSaved = false
 
-  console.log('🔑 Auth object created:', auth ? '✅ YES' : '❌ NULL (missing credentials)')
-
   if (delivery !== 'n8n' && auth && SPREADSHEET_ID) {
     try {
       const sheets = google.sheets({ version: 'v4', auth })
-      console.log(`📊 Attempting to write to sheet "${SHEET_NAME}" in spreadsheet ${SPREADSHEET_ID}`)
 
       // Ensure header row exists
       const existing = await sheets.spreadsheets.values.get({
@@ -986,7 +1080,6 @@ async function processLead(body, requestMeta = {}) {
       })
 
       if (!existing.data.values || existing.data.values.length === 0) {
-        console.log('📝 No header row found — creating headers...')
         await sheets.spreadsheets.values.update({
           spreadsheetId: SPREADSHEET_ID,
           range: `${SHEET_NAME}!A1:AG1`,
@@ -998,7 +1091,6 @@ async function processLead(body, requestMeta = {}) {
       }
 
       // Append lead row
-      console.log('📝 Appending lead row...')
       await sheets.spreadsheets.values.append({
         spreadsheetId: SPREADSHEET_ID,
         range: `${SHEET_NAME}!A:AG`,
@@ -1010,16 +1102,12 @@ async function processLead(body, requestMeta = {}) {
       })
 
       sheetSaved = true
-      console.log(`✅ Lead saved to Google Sheets: ${firstName} ${lastName} (${lead_score})`)
+      logLead('Lead saved to Google Sheets', leadRecord)
     } catch (sheetErr) {
-      console.error('❌ Google Sheets Error:', sheetErr.message)
-      console.error('❌ Full error:', JSON.stringify(sheetErr.errors || sheetErr.response?.data || sheetErr, null, 2))
+      console.error(`Google Sheets error: lead_id=${leadRecord.lead_id} segment=${leadRecord.segment} message=${sheetErr.message}`)
     }
   } else {
-    console.log('⚠️  Google Sheets not configured — lead logged locally:')
-    console.log('   auth:', auth ? 'OK' : 'NULL')
-    console.log('   SPREADSHEET_ID:', SPREADSHEET_ID || 'EMPTY')
-    console.log('    ', row.join(' | '))
+    logLead('Google Sheets skipped', leadRecord, auth ? 'reason=spreadsheet_not_configured' : 'reason=auth_not_configured')
   }
 
   if (delivery === 'none' && sheetSaved) {
@@ -1035,7 +1123,7 @@ async function processLead(body, requestMeta = {}) {
     try {
       await sendEmailNotification(body)
     } catch (emailErr) {
-      console.error('❌ Email notification error:', emailErr.message)
+      console.error(`Email notification error: lead_id=${leadRecord.lead_id} segment=${leadRecord.segment} message=${emailErr.message}`)
     }
   }
 
@@ -1051,21 +1139,62 @@ async function processLead(body, requestMeta = {}) {
     next_action: leadRecord.next_action,
     next_best_action: leadRecord.next_best_action,
     customer_email: customerEmail,
+    duplicate: Boolean(leadRecord.duplicate),
   }
 }
 
 export async function POST(request) {
   try {
-    const body = await request.json()
     const forwardedFor = request.headers.get('x-forwarded-for')
     const clientIp = forwardedFor?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || ''
     const userAgent = request.headers.get('user-agent') || ''
     const isBackground = new URL(request.url).searchParams.get('background') === '1'
+    let body
+
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json(
+        { success: false, error: 'invalid_json' },
+        { status: 400 }
+      )
+    }
+
+    if (hasHoneypotValue(body)) {
+      return NextResponse.json({ success: true, ignored: true })
+    }
+
+    const rateLimit = checkRateLimit(clientIp)
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: 'rate_limited' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(rateLimit.retryAfter),
+          },
+        }
+      )
+    }
+
+    const validation = validateLeadInput(body)
+    if (!validation.valid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'invalid_lead_payload',
+          fields: validation.errors,
+        },
+        { status: 400 }
+      )
+    }
+
+    const normalizedBody = validation.normalized
 
     if (isBackground) {
       waitUntil(
-        processLead(body, { clientIp, userAgent }).catch((error) => {
-          console.error('❌ Background Lead API Error:', error)
+        processLead(normalizedBody, { clientIp, userAgent }).catch((error) => {
+          console.error(`Background Lead API Error: ${error.message}`)
         })
       )
 
@@ -1078,9 +1207,9 @@ export async function POST(request) {
       )
     }
 
-    return NextResponse.json(await processLead(body, { clientIp, userAgent }))
+    return NextResponse.json(await processLead(normalizedBody, { clientIp, userAgent }))
   } catch (error) {
-    console.error('❌ Lead API Error:', error)
+    console.error(`Lead API Error: ${error.message}`)
     return NextResponse.json(
       { success: false, error: error.message },
       { status: 500 }

@@ -81,6 +81,7 @@ function buildPayload(seed) {
     zeitrahmen: seed.zeitrahmen,
     eigenkapital: seed.eigenkapital,
     finanzierung: seed.finanzierung,
+    consent: true,
     lead_score: seed.lead_score,
     underqualified: seed.underqualified,
     source: {

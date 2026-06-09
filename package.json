@@ -7,6 +7,7 @@
     "demo:leads": "node scripts/demo-leads.js",
     "build": "next build",
     "start": "next start",
+    "test": "vitest run",
     "lint": "next lint"
   },
   "dependencies": {
@@ -21,6 +22,7 @@
   "devDependencies": {
     "dotenv": "^17.2.4",
     "eslint": "^8.57.0",
-    "eslint-config-next": "^14.2.0"
+    "eslint-config-next": "^14.2.0",
+    "vitest": "^4.1.8"
   }
 }
