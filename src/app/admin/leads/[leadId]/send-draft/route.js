@@ -44,6 +44,20 @@ export async function POST(request, { params }) {
       return redirectToLead(request, leadId, { error: 'draft_not_found' })
     }
 
+    if (draft.status === 'sent') {
+      await recordLeadEvent({
+        leadId,
+        tenantId: leadResult.lead.tenant_id,
+        type: 'email_send_skipped',
+        payload: {
+          draft_id: draftId,
+          reason: 'already_sent',
+        },
+      })
+
+      return redirectToLead(request, leadId, { error: 'already_sent' })
+    }
+
     const delivery = await sendReviewedDraftEmail({
       lead: leadResult.lead,
       subject,
