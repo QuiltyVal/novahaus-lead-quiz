@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { listLeads } from '@/lib/leadStore'
 
 export const dynamic = 'force-dynamic'
@@ -132,6 +133,7 @@ export default async function LeadsAdminPage() {
                   <th>Budgetsignal</th>
                   <th>Nächster Schritt</th>
                   <th>Eingang</th>
+                  <th>Aktion</th>
                 </tr>
               </thead>
               <tbody>
@@ -157,6 +159,11 @@ export default async function LeadsAdminPage() {
                       <span>{lead.next_best_action || lead.next_action || '—'}</span>
                     </td>
                     <td>{formatDate(lead.created_at)}</td>
+                    <td>
+                      <Link className="admin-small-link" href={`/admin/leads/${lead.lead_id}`}>
+                        Öffnen
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>

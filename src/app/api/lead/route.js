@@ -1012,8 +1012,8 @@ async function processLead(body, requestMeta = {}) {
   }
 
   const markedLeadRecord = markDuplicateLead(baseLeadRecord, duplicateLead)
-  const shouldGenerateAIForDraftWorkflow = Boolean(N8N_LEAD_WEBHOOK_URL) && AI_EMAIL_PROVIDER !== 'template'
-  const leadRecord = shouldGenerateAIForDraftWorkflow
+  const shouldGenerateAIForAdminReview = AI_EMAIL_PROVIDER !== 'template'
+  const leadRecord = shouldGenerateAIForAdminReview
     ? await attachAIEmailDraft(markedLeadRecord)
     : markedLeadRecord
   let delivery = 'none'

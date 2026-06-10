@@ -35,6 +35,14 @@ const LEAD_SELECT_COLUMNS = `
   utm_campaign
 `
 
+const LEAD_DETAIL_COLUMNS = `
+  ${LEAD_SELECT_COLUMNS},
+  consent_contact,
+  consent_data_processing,
+  email,
+  raw
+`
+
 function normalizeLimit(limit) {
   const parsed = Number.parseInt(limit, 10)
   if (!Number.isFinite(parsed)) return 100
@@ -246,6 +254,22 @@ export async function saveLeadRecord(leadRecord) {
   return { saved: true, lead_id: leadRecord.lead_id }
 }
 
+export async function recordLeadEvent({ leadId, tenantId, type, payload = {} }) {
+  if (!isDatabaseConfigured()) {
+    return { saved: false, reason: 'database_not_configured' }
+  }
+
+  await query(
+    `
+      INSERT INTO lead_events (lead_id, tenant_id, type, payload)
+      VALUES ($1, $2, $3, $4)
+    `,
+    [leadId, tenantId, type, JSON.stringify(payload)]
+  )
+
+  return { saved: true }
+}
+
 export async function findRecentLeadByEmailTenant({ email, tenantId, withinHours = 24 }) {
   if (!isDatabaseConfigured()) {
     return null
@@ -289,4 +313,79 @@ export async function listLeads({ limit = 100 } = {}) {
   )
 
   return { configured: true, leads: result.rows }
+}
+
+export async function getLeadDetail(leadId) {
+  if (!isDatabaseConfigured()) {
+    return { configured: false, lead: null, drafts: [] }
+  }
+
+  const leadResult = await query(
+    `
+      SELECT ${LEAD_DETAIL_COLUMNS}
+      FROM leads
+      WHERE lead_id = $1
+      LIMIT 1
+    `,
+    [leadId]
+  )
+
+  if (leadResult.rows.length === 0) {
+    return { configured: true, lead: null, drafts: [] }
+  }
+
+  const draftsResult = await query(
+    `
+      SELECT id, provider, model, subject, body, status, created_at, updated_at
+      FROM email_drafts
+      WHERE lead_id = $1
+      ORDER BY created_at DESC
+    `,
+    [leadId]
+  )
+
+  return {
+    configured: true,
+    lead: leadResult.rows[0],
+    drafts: draftsResult.rows,
+  }
+}
+
+export async function getEmailDraftForLead({ leadId, draftId }) {
+  if (!isDatabaseConfigured()) {
+    return null
+  }
+
+  const result = await query(
+    `
+      SELECT id, lead_id, tenant_id, provider, model, subject, body, status
+      FROM email_drafts
+      WHERE lead_id = $1
+        AND id = $2
+      LIMIT 1
+    `,
+    [leadId, draftId]
+  )
+
+  return result.rows[0] || null
+}
+
+export async function markEmailDraftSent({ draftId, subject, body }) {
+  if (!isDatabaseConfigured()) {
+    return { saved: false, reason: 'database_not_configured' }
+  }
+
+  await query(
+    `
+      UPDATE email_drafts
+      SET subject = $2,
+          body = $3,
+          status = 'sent',
+          updated_at = now()
+      WHERE id = $1
+    `,
+    [draftId, subject, body]
+  )
+
+  return { saved: true }
 }

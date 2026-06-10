@@ -171,6 +171,8 @@ GEMINI_API_KEY=your-key
 
 If the selected provider is not configured or returns invalid content, `/api/lead` falls back to the static draft so the pipeline still writes the lead, appends the email queue row, and creates a Gmail draft.
 
+When `DATABASE_URL` is configured, every lead also stores an email draft in the internal Lead Inbox. If `AI_EMAIL_PROVIDER` is not `template`, the AI-generated draft is saved for human review at `/admin/leads/{lead_id}`. It is not used for automatic direct sending.
+
 ## Direct Customer Email
 
 The app can send the prepared follow-up email directly from `/api/lead`, independent from n8n, Google Sheets, or Gmail OAuth.
@@ -204,6 +206,8 @@ LEAD_EMAIL_FROM="NovaHaus Immobilien <leads@novahaus.valquilty.com>"
 ```
 
 Demo or reserved `example.com` leads are skipped unless `DEMO_LEAD_TARGET_EMAIL` is set. This prevents test/demo leads from sending to fake addresses.
+
+Direct customer email always uses the safe template draft. AI-generated copy is only shown in the admin Lead Inbox and can be sent manually after review.
 
 ## n8n Workflow
 
