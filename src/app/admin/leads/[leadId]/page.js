@@ -54,6 +54,11 @@ function Field({ label, value }) {
   )
 }
 
+function getReplyText(reply) {
+  const payload = reply?.payload && typeof reply.payload === 'object' ? reply.payload : {}
+  return payload.text || 'Keine Textantwort im Inbound-Event.'
+}
+
 function DatabaseSetupState() {
   return (
     <main className="admin-shell">
@@ -76,7 +81,7 @@ export default async function LeadDetailPage({ params, searchParams }) {
     notFound()
   }
 
-  const { lead, drafts } = result
+  const { lead, drafts, replies } = result
   const draft = drafts[0] || null
   const isDraftSent = draft?.status === 'sent'
   const raw = lead.raw && typeof lead.raw === 'object' ? lead.raw : {}
@@ -119,6 +124,7 @@ export default async function LeadDetailPage({ params, searchParams }) {
             <Field label="Finanzierung" value={lead.financing_status_label} />
             <Field label="Nächster Schritt" value={lead.next_best_action || lead.next_action} />
             <Field label="Assigned To" value={lead.assigned_to} />
+            <Field label="Status" value={lead.status} />
             <Field label="Eingang" value={formatDate(lead.created_at)} />
             <Field label="Consent" value={lead.consent_contact ? 'Ja' : 'Nein'} />
           </div>
@@ -185,6 +191,36 @@ export default async function LeadDetailPage({ params, searchParams }) {
               <span>
                 Neue Leads erzeugen automatisch einen Template Draft oder, wenn
                 `AI_EMAIL_PROVIDER` konfiguriert ist, einen AI Draft.
+              </span>
+            </div>
+          )}
+        </section>
+
+        <section className="admin-panel admin-detail-wide">
+          <div className="admin-panel-heading">
+            <div>
+              <h2>Antworten</h2>
+              <p>Antworten, die über Resend Inbound empfangen und dem Lead zugeordnet wurden.</p>
+            </div>
+          </div>
+
+          {replies?.length > 0 ? (
+            <div className="admin-replies">
+              {replies.map((reply) => (
+                <article className="admin-reply" key={reply.id}>
+                  <div className="admin-reply-header">
+                    <strong>Antwort erhalten</strong>
+                    <span>{formatDate(reply.created_at)}</span>
+                  </div>
+                  <p className="admin-reply-text">{getReplyText(reply)}</p>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="admin-code-block">
+              <span>Noch keine Antworten für diesen Lead.</span>
+              <span>
+                Wenn der Kontakt auf die geprüfte E-Mail antwortet, erscheint die Antwort hier.
               </span>
             </div>
           )}

@@ -39,7 +39,6 @@ const LEAD_DETAIL_COLUMNS = `
   ${LEAD_SELECT_COLUMNS},
   consent_contact,
   consent_data_processing,
-  email,
   raw
 `
 
@@ -297,6 +296,52 @@ export async function findRecentLeadByEmailTenant({ email, tenantId, withinHours
   return result.rows[0] || null
 }
 
+export async function findLatestLeadByEmail(email) {
+  if (!isDatabaseConfigured()) {
+    return null
+  }
+
+  const normalizedEmail = String(email || '').trim().toLowerCase()
+  if (!normalizedEmail) {
+    return null
+  }
+
+  const result = await query(
+    `
+      SELECT ${LEAD_DETAIL_COLUMNS}
+      FROM leads
+      WHERE lower(email) = $1
+      ORDER BY created_at DESC
+      LIMIT 1
+    `,
+    [normalizedEmail]
+  )
+
+  return result.rows[0] || null
+}
+
+export async function updateLeadStatus({ leadId, status }) {
+  if (!isDatabaseConfigured()) {
+    return { saved: false, reason: 'database_not_configured' }
+  }
+
+  if (!leadId || !status) {
+    return { saved: false, reason: 'missing_input' }
+  }
+
+  await query(
+    `
+      UPDATE leads
+      SET status = $2,
+          updated_at = now()
+      WHERE lead_id = $1
+    `,
+    [leadId, status]
+  )
+
+  return { saved: true }
+}
+
 export async function listLeads({ limit = 100 } = {}) {
   if (!isDatabaseConfigured()) {
     return { configured: false, leads: [] }
@@ -317,7 +362,7 @@ export async function listLeads({ limit = 100 } = {}) {
 
 export async function getLeadDetail(leadId) {
   if (!isDatabaseConfigured()) {
-    return { configured: false, lead: null, drafts: [] }
+    return { configured: false, lead: null, drafts: [], replies: [] }
   }
 
   const leadResult = await query(
@@ -331,7 +376,7 @@ export async function getLeadDetail(leadId) {
   )
 
   if (leadResult.rows.length === 0) {
-    return { configured: true, lead: null, drafts: [] }
+    return { configured: true, lead: null, drafts: [], replies: [] }
   }
 
   const draftsResult = await query(
@@ -344,10 +389,22 @@ export async function getLeadDetail(leadId) {
     [leadId]
   )
 
+  const repliesResult = await query(
+    `
+      SELECT id, payload, created_at
+      FROM lead_events
+      WHERE lead_id = $1
+        AND type = 'reply_received'
+      ORDER BY created_at DESC
+    `,
+    [leadId]
+  )
+
   return {
     configured: true,
     lead: leadResult.rows[0],
     drafts: draftsResult.rows,
+    replies: repliesResult.rows,
   }
 }
 

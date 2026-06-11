@@ -209,6 +209,47 @@ Demo or reserved `example.com` leads are skipped unless `DEMO_LEAD_TARGET_EMAIL`
 
 Direct customer email always uses the safe template draft. AI-generated copy is only shown in the admin Lead Inbox and can be sent manually after review.
 
+## Resend Inbound Replies
+
+Inbound replies let a lead answer the reviewed email and appear back in the Lead Inbox without Gmail or n8n.
+
+Environment:
+
+```bash
+LEAD_EMAIL_REPLY_TO=leads@reply.valquilty.com
+RESEND_INBOUND_WEBHOOK_SECRET=whsec_...
+TELEGRAM_BOT_TOKEN=
+TELEGRAM_CHAT_ID=
+```
+
+Manual setup:
+
+1. In Resend, open **Domains** and add a receiving subdomain such as `reply.valquilty.com`. Use a subdomain so the existing Zoho/Gmail/other mailbox MX records for the root domain stay untouched.
+2. In Cloudflare/DNS, add the MX record shown by Resend:
+   - Type: `MX`
+   - Name: `reply`
+   - Mail server/value: copy the exact Resend receiving target from the dashboard, for example `inbound-smtp.us-east-1.amazonaws.com`
+   - Priority: copy Resend's value, usually `10`
+   - TTL: `Auto`
+   - Proxy: DNS only
+3. In Resend, open **Webhooks** and create a webhook:
+   - URL: `https://novahaus.valquilty.com/api/inbound-email`
+   - Event: `email.received`
+4. Copy the webhook signing secret from the Resend webhook details into `RESEND_INBOUND_WEBHOOK_SECRET` in Vercel.
+5. Set `LEAD_EMAIL_REPLY_TO` in Vercel to an address on the receiving subdomain, for example `leads@reply.valquilty.com`. Any local part is fine as long as the receiving domain is verified in Resend.
+6. Optional: set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` to receive a small notification when a lead replies. If either value is missing, Telegram is skipped silently.
+7. Redeploy the Vercel app after changing env variables.
+
+Test:
+
+1. Submit the quiz with an email address you can access.
+2. Open `/admin/leads/{lead_id}`, review the generated draft, and send it.
+3. Reply to the received email.
+4. In Resend Webhooks, confirm the `email.received` delivery returns `2xx`.
+5. Open the same lead card in `/admin/leads/{lead_id}`. The lead status should be `replied`, and the reply should appear under **Antworten**.
+
+The webhook validates Resend's Svix signature before doing any work. Resend's `email.received` webhook only contains metadata, so `/api/inbound-email` fetches the full email body through the Resend Received Emails API before saving `reply_received` into `lead_events`.
+
 ## n8n Workflow
 
 The workflow files and setup notes are in:

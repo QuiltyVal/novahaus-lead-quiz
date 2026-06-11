@@ -3299,6 +3299,10 @@ a {
   margin: 0 auto;
 }
 
+.admin-detail-wide {
+  grid-column: 1 / -1;
+}
+
 .admin-field-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3445,6 +3449,45 @@ a {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 14px;
   padding: 16px;
+}
+
+.admin-replies {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-reply {
+  border: 1px solid #ece7df;
+  border-radius: 8px;
+  background: #faf8f3;
+  padding: 16px;
+}
+
+.admin-reply-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.admin-reply-header strong {
+  color: #18232d;
+}
+
+.admin-reply-header span {
+  color: #687480;
+  font-size: 13px;
+}
+
+.admin-reply-text {
+  color: #273441 !important;
+  font-size: 15px;
+  line-height: 1.55;
+  margin: 0;
+  max-width: none !important;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
 }
 
 .admin-table-wrap {
