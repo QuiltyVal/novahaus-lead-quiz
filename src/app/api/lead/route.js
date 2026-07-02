@@ -3,7 +3,7 @@ import { waitUntil } from '@vercel/functions'
 import { randomUUID } from 'crypto'
 import { google } from 'googleapis'
 import nodemailer from 'nodemailer'
-import { DEFAULT_TENANT_CONFIG, optionMap } from '@/lib/tenantConfig'
+import { DEFAULT_TENANT_CONFIG, getTenantConfig, optionMap } from '@/lib/tenantConfig'
 import { calculateLeadScore } from '@/lib/leadScoring'
 import { getSalesQualification } from '@/lib/leadQualification'
 import { findRecentLeadByEmailTenant, saveLeadRecord } from '@/lib/leadStore'
@@ -169,6 +169,11 @@ function hasHoneypotValue(body) {
 }
 
 function validateLeadInput(body) {
+  const tenantConfig = getTenantConfig(trimString(body.tenant_id) || DEFAULT_TENANT_CONFIG.tenantId)
+  const validWohnung = new Set(tenantConfig.quiz.propertyOptions.map((option) => option.value))
+  const validZeitrahmen = new Set(tenantConfig.quiz.purchaseTimelineOptions.map((option) => option.value))
+  const validEigenkapital = new Set(tenantConfig.quiz.equityBucketOptions.map((option) => option.value))
+  const validFinanzierung = new Set(tenantConfig.quiz.financingStatusOptions.map((option) => option.value))
   const normalized = {
     ...body,
     firstName: trimString(body.firstName),
@@ -186,13 +191,15 @@ function validateLeadInput(body) {
 
   if (!normalized.firstName) errors.firstName = 'required'
   if (!EMAIL_PATTERN.test(normalized.email)) errors.email = 'invalid'
-  if (!VALID_WOHNUNG.has(normalized.wohnung)) errors.wohnung = 'invalid'
-  if (!VALID_ZEITRAHMEN.has(normalized.zeitrahmen)) errors.zeitrahmen = 'invalid'
-  if (!VALID_EIGENKAPITAL.has(normalized.eigenkapital)) errors.eigenkapital = 'invalid'
-  if (!VALID_FINANZIERUNG.has(normalized.finanzierung)) errors.finanzierung = 'invalid'
+  if (!validWohnung.has(normalized.wohnung)) errors.wohnung = 'invalid'
+  if (!validZeitrahmen.has(normalized.zeitrahmen)) errors.zeitrahmen = 'invalid'
+  if (!validEigenkapital.has(normalized.eigenkapital)) errors.eigenkapital = 'invalid'
+  if (!validFinanzierung.has(normalized.finanzierung)) errors.finanzierung = 'invalid'
   if (!normalized.consent) errors.consent = 'required'
 
-  normalized.lead_score = calculateLeadScore(normalized, TENANT_CONFIG)
+  normalized.tenant_id = tenantConfig.tenantId
+  normalized.project_id = trimString(body.project_id) || tenantConfig.projectId
+  normalized.lead_score = calculateLeadScore(normalized, tenantConfig)
 
   return {
     valid: Object.keys(errors).length === 0,
@@ -590,6 +597,11 @@ async function attachAIEmailDraft(leadRecord) {
 }
 
 function buildLeadRecord(body, requestMeta = {}) {
+  const tenantConfig = getTenantConfig(body.tenant_id)
+  const wohnungLabels = optionMap(tenantConfig.quiz.propertyOptions, 'label')
+  const zeitrahmenLabels = optionMap(tenantConfig.quiz.purchaseTimelineOptions, 'label')
+  const eigenkapitalLabels = optionMap(tenantConfig.quiz.equityBucketOptions, 'label')
+  const finanzierungLabels = optionMap(tenantConfig.quiz.financingStatusOptions, 'label')
   const {
     firstName = '',
     lastName = '',
@@ -613,12 +625,13 @@ function buildLeadRecord(body, requestMeta = {}) {
     eigenkapital,
     finanzierung,
     underqualified: Boolean(underqualified),
+    tenantConfig,
   })
   const followupDueAt = addMinutes(createdAt, qualification.followupMinutes)
-  const wohnungLabel = WOHNUNG_LABELS[wohnung] || wohnung
-  const zeitrahmenLabel = ZEITRAHMEN_LABELS[zeitrahmen] || zeitrahmen
-  const eigenkapitalLabel = EIGENKAPITAL_LABELS[eigenkapital] || eigenkapital
-  const finanzierungLabel = FINANZIERUNG_LABELS[finanzierung] || finanzierung
+  const wohnungLabel = wohnungLabels[wohnung] || wohnung
+  const zeitrahmenLabel = zeitrahmenLabels[zeitrahmen] || zeitrahmen
+  const eigenkapitalLabel = eigenkapitalLabels[eigenkapital] || eigenkapital
+  const finanzierungLabel = finanzierungLabels[finanzierung] || finanzierung
   const emailDraft = buildEmailDraft({
     firstName,
     segment: qualification.segment,
@@ -631,10 +644,10 @@ function buildLeadRecord(body, requestMeta = {}) {
   return {
     lead_id: randomUUID(),
     created_at: createdAt,
-    tenant_id: body.tenant_id || TENANT_CONFIG.tenantId,
-    project_id: body.project_id || TENANT_CONFIG.projectId,
-    source: TENANT_CONFIG.quiz.source,
-    quiz_version: body.quiz_version || TENANT_CONFIG.quiz.version,
+    tenant_id: tenantConfig.tenantId,
+    project_id: body.project_id || tenantConfig.projectId,
+    source: tenantConfig.quiz.source,
+    quiz_version: body.quiz_version || tenantConfig.quiz.version,
     status: qualification.status,
     priority: qualification.priority,
 
@@ -729,12 +742,17 @@ async function sendEmailNotification(leadData) {
     wohnung, zeitrahmen, eigenkapital, finanzierung,
     lead_score, underqualified, source = {}, timestamp,
   } = leadData
+  const tenantConfig = getTenantConfig(leadData.tenant_id)
+  const wohnungLabels = optionMap(tenantConfig.quiz.propertyOptions, 'label')
+  const zeitrahmenLabels = optionMap(tenantConfig.quiz.purchaseTimelineOptions, 'label')
+  const eigenkapitalLabels = optionMap(tenantConfig.quiz.equityBucketOptions, 'label')
+  const finanzierungLabels = optionMap(tenantConfig.quiz.financingStatusOptions, 'label')
 
   const scoreLabel = SCORE_EMOJIS[lead_score] || lead_score
-  const wohnungLabel = WOHNUNG_LABELS[wohnung] || wohnung
-  const zeitrahmenLabel = ZEITRAHMEN_LABELS[zeitrahmen] || zeitrahmen
-  const eigenkapitalLabel = EIGENKAPITAL_LABELS[eigenkapital] || eigenkapital
-  const finanzierungLabel = FINANZIERUNG_LABELS[finanzierung] || finanzierung
+  const wohnungLabel = wohnungLabels[wohnung] || wohnung
+  const zeitrahmenLabel = zeitrahmenLabels[zeitrahmen] || zeitrahmen
+  const eigenkapitalLabel = eigenkapitalLabels[eigenkapital] || eigenkapital
+  const finanzierungLabel = finanzierungLabels[finanzierung] || finanzierung
 
   const subject = `${scoreLabel} — Neuer Lead: ${firstName} ${lastName}`
 

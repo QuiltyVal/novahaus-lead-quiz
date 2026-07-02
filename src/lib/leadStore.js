@@ -1,5 +1,5 @@
 import { query, isDatabaseConfigured } from '@/lib/db'
-import { DEFAULT_TENANT_CONFIG } from '@/lib/tenantConfig'
+import { TENANT_CONFIGS } from '@/lib/tenantConfig'
 
 export { isDatabaseConfigured }
 
@@ -48,37 +48,39 @@ function normalizeLimit(limit) {
   return Math.min(Math.max(parsed, 1), 250)
 }
 
-export async function ensureDefaultTenantProject() {
+export async function ensureTenantProjects() {
   if (!isDatabaseConfigured()) {
     return { saved: false, reason: 'database_not_configured' }
   }
 
-  await query(
-    `
-      INSERT INTO tenants (id, name)
-      VALUES ($1, $2)
-      ON CONFLICT (id) DO UPDATE
-      SET name = EXCLUDED.name,
-          updated_at = now()
-    `,
-    [DEFAULT_TENANT_CONFIG.tenantId, DEFAULT_TENANT_CONFIG.brand.name]
-  )
+  for (const tenantConfig of Object.values(TENANT_CONFIGS)) {
+    await query(
+      `
+        INSERT INTO tenants (id, name)
+        VALUES ($1, $2)
+        ON CONFLICT (id) DO UPDATE
+        SET name = EXCLUDED.name,
+            updated_at = now()
+      `,
+      [tenantConfig.tenantId, tenantConfig.brand.name]
+    )
 
-  await query(
-    `
-      INSERT INTO projects (id, tenant_id, name)
-      VALUES ($1, $2, $3)
-      ON CONFLICT (id) DO UPDATE
-      SET name = EXCLUDED.name,
-          tenant_id = EXCLUDED.tenant_id,
-          updated_at = now()
-    `,
-    [
-      DEFAULT_TENANT_CONFIG.projectId,
-      DEFAULT_TENANT_CONFIG.tenantId,
-      'Leipzig owner apartments',
-    ]
-  )
+    await query(
+      `
+        INSERT INTO projects (id, tenant_id, name)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (id) DO UPDATE
+        SET name = EXCLUDED.name,
+            tenant_id = EXCLUDED.tenant_id,
+            updated_at = now()
+      `,
+      [
+        tenantConfig.projectId,
+        tenantConfig.tenantId,
+        tenantConfig.brand.name,
+      ]
+    )
+  }
 
   return { saved: true }
 }
@@ -88,7 +90,7 @@ export async function saveLeadRecord(leadRecord) {
     return { saved: false, reason: 'database_not_configured' }
   }
 
-  await ensureDefaultTenantProject()
+  await ensureTenantProjects()
 
   await query(
     `
@@ -342,19 +344,22 @@ export async function updateLeadStatus({ leadId, status }) {
   return { saved: true }
 }
 
-export async function listLeads({ limit = 100 } = {}) {
+export async function listLeads({ limit = 100, tenantId = '' } = {}) {
   if (!isDatabaseConfigured()) {
     return { configured: false, leads: [] }
   }
 
+  const normalizedTenantId = String(tenantId || '').trim()
+  const params = normalizedTenantId ? [normalizedTenantId, normalizeLimit(limit)] : [normalizeLimit(limit)]
   const result = await query(
     `
       SELECT ${LEAD_SELECT_COLUMNS}
       FROM leads
+      ${normalizedTenantId ? 'WHERE tenant_id = $1' : ''}
       ORDER BY created_at DESC
-      LIMIT $1
+      LIMIT ${normalizedTenantId ? '$2' : '$1'}
     `,
-    [normalizeLimit(limit)]
+    params
   )
 
   return { configured: true, leads: result.rows }

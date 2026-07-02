@@ -105,11 +105,10 @@ export default function DatenschutzPage() {
             <li>Vorname und Nachname</li>
             <li>E-Mail-Adresse</li>
             <li>Telefonnummer</li>
-            <li>Ihre Antworten im Quiz (Wohnungswahl, Zeitrahmen, Eigenkapital, Finanzierung)</li>
+            <li>Ihre Antworten im Quiz (Wohnungswahl bzw. Investitionsziel, Zeitrahmen, Eigenkapital, Finanzierung)</li>
           </ul>
           <p>
-            Diese Daten werden ausschließlich zur Bearbeitung Ihrer Anfrage und zur
-            Zusendung des gewünschten Exposés verwendet. Die Rechtsgrundlage ist
+            Diese Daten werden zur Bearbeitung Ihrer Anfrage, zur Zusendung des gewünschten Exposés bzw. der Kapitalanlage-Einschätzung und zur Kontaktaufnahme verwendet. Die Rechtsgrundlage ist
             Art. 6 Abs. 1 S. 1 lit. a DSGVO (Einwilligung) sowie Art. 6 Abs. 1 S. 1
             lit. b DSGVO (vorvertragliche Maßnahmen).
           </p>
@@ -134,7 +133,11 @@ export default function DatenschutzPage() {
             </li>
             <li>
               dies nach Art. 6 Abs. 1 S. 1 lit. b DSGVO für die Abwicklung von
-              Vertragsverhältnissen mit Ihnen erforderlich ist.
+              Vertragsverhältnissen mit Ihnen erforderlich ist, oder
+            </li>
+            <li>
+              Sie im Kapitalanlage-Check in die Weitergabe an ein Partnerunternehmen
+              zur Kontaktaufnahme eingewilligt haben.
             </li>
           </ul>
 

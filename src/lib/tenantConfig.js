@@ -137,9 +137,82 @@ export const TENANT_CONFIGS = {
       },
     },
   },
+
+  investor: {
+    tenantId: 'investor',
+    projectId: 'kapitalanlage-check',
+    brand: {
+      name: 'NovaHaus Kapitalanlage-Check',
+      language: 'de-DE',
+      market: 'DE',
+    },
+    quiz: {
+      source: 'investor_quiz',
+      version: 'investor_quiz_v1',
+      totalSteps: 5,
+      propertyQuestion: 'Was ist Ihr Ziel mit der Kapitalanlage?',
+      propertyFieldLabel: 'Investitionsziel',
+      propertyOptions: [
+        { value: 'rendite', icon: 'money', title: 'Rendite', details: 'Mieteinnahmen und laufender Cashflow', label: 'Rendite', valueEur: 0 },
+        { value: 'altersvorsorge', icon: 'bank', title: 'Altersvorsorge', details: 'Langfristig Vermögen für später aufbauen', label: 'Altersvorsorge', valueEur: 0 },
+        { value: 'vermoegensaufbau', icon: 'chart', title: 'Vermögensaufbau', details: 'Sachwerte und Eigenkapital strategisch nutzen', label: 'Vermögensaufbau', valueEur: 0 },
+      ],
+      purchaseTimelineQuestion: 'Wann möchten Sie kaufen?',
+      equityQuestion: 'Wie viel Eigenkapital möchten Sie einsetzen?',
+      financingQuestion: 'Wie ist Ihr Finanzierungsstatus?',
+      contactQuestion: 'Wohin dürfen wir Ihre Einschätzung senden?',
+      submitLabel: 'Kapitalanlage-Check anfragen →',
+      consentText: 'Ich stimme der Datenschutzerklärung zu und möchte kontaktiert werden. Dies umfasst die Weitergabe meiner Daten an ein Partnerunternehmen zur Kontaktaufnahme. *',
+      purchaseTimelineOptions: [
+        { value: 'sofort', icon: 'fire', text: 'So schnell wie möglich', label: 'So schnell wie möglich' },
+        { value: '3-6-monate', icon: 'calendar', text: 'In den nächsten 3–6 Monaten', label: 'In 3–6 Monaten' },
+        { value: 'informieren', icon: 'lightbulb', text: 'Ich informiere mich erst', label: 'Informiert sich erst' },
+      ],
+      equityBucketOptions: [
+        { value: 'unter-30k', icon: 'money', text: 'Unter 30.000 €', label: 'Unter €30.000' },
+        { value: '30-50k', icon: 'money', text: '30.000 – 50.000 €', label: '€30.000 – €50.000' },
+        { value: '50-80k', icon: 'money', text: '50.000 – 80.000 €', label: '€50.000 – €80.000' },
+        { value: 'ueber-80k', icon: 'bank', text: 'Über 80.000 €', label: 'Über €80.000' },
+        { value: 'keine-angabe', icon: 'lock', text: 'Keine Angabe', label: 'Keine Angabe' },
+      ],
+      financingStatusOptions: [
+        { value: 'vorhanden', icon: 'check', text: 'Ja, Finanzierung ist geklärt', label: 'Ja, vorhanden' },
+        { value: 'in-planung', icon: 'document', text: 'In Prüfung oder Planung', label: 'In Planung' },
+        { value: 'benoetigt-hilfe', icon: 'handshake', text: 'Ich brauche Unterstützung', label: 'Braucht Unterstützung' },
+      ],
+      softDisqualification: {
+        triggerEquityBucket: 'unter-30k',
+        recommendedMinimumEquity: '€50.000',
+        alternativeTopics: ['Finanzierungsrahmen vorbereiten', 'Passende Einstiegsobjekte prüfen'],
+      },
+    },
+    scoring: {
+      notQualified: { equityBuckets: ['unter-30k'] },
+      hot: { purchaseTimeline: 'sofort', equityBuckets: ['50-80k', 'ueber-80k'], financingStatus: 'vorhanden' },
+      warm: { purchaseTimelines: ['sofort', '3-6-monate'], equityBuckets: ['30-50k', '50-80k', 'ueber-80k'] },
+    },
+    workflow: {
+      segments: {
+        not_qualified: { segment: 'not_qualified', status: 'not_qualified', priority: 'P4', nextAction: 'send_soft_disqualification_or_financing_options', assignedTo: 'ai_agent', followupMinutes: 60 * 24 * 3, handoffRequired: false, handoffReason: '', qualificationReason: 'minimum_equity_not_met' },
+        hot: { segment: 'hot', status: 'ready_for_call', priority: 'P1', nextAction: 'partner_call_within_15min', assignedTo: 'call_center', followupMinutes: 15, handoffRequired: true, handoffReason: 'hot_investor_ready_for_call', qualificationReason: 'urgent_timeline_capital_and_financing_ready' },
+        warm: { segment: 'warm', status: 'ai_follow_up', priority: 'P2', nextAction: 'send_clarifying_question_and_offer_call', assignedTo: 'ai_agent', followupMinutes: 120, handoffRequired: false, handoffReason: '', qualificationReason: 'active_investor_but_financing_or_timing_needs_clarity' },
+        cold: { segment: 'cold', status: 'nurture', priority: 'P3', nextAction: 'send_nurture_email', assignedTo: 'nurture_agent', followupMinutes: 60 * 24, handoffRequired: false, handoffReason: '', qualificationReason: 'early_research_or_missing_financing_signal' },
+      },
+    },
+    email: {
+      signature: 'NovaHaus Kapitalanlage-Check',
+      systemInstructionSegments: {
+        hot: 'confirm interest, offer a prompt investment-fit call, mention financing and property matching as next steps.',
+        warm: 'ask one financing or investment goal clarification and offer a short call.',
+        cold: 'keep it helpful and low-pressure; invite reply when investment timing becomes concrete.',
+        not_qualified: 'respond softly; suggest financing preparation before selecting an investment property.',
+      },
+    },
+  },
 }
 
 export const DEFAULT_TENANT_CONFIG = TENANT_CONFIGS[DEFAULT_TENANT_ID]
+export const INVESTOR_TENANT_CONFIG = TENANT_CONFIGS.investor
 
 export function getTenantConfig(tenantId = DEFAULT_TENANT_ID) {
   return TENANT_CONFIGS[tenantId] || DEFAULT_TENANT_CONFIG

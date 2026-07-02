@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { listLeads } from '@/lib/leadStore'
+import { TENANT_CONFIGS } from '@/lib/tenantConfig'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -63,13 +64,15 @@ function DatabaseErrorState({ message }) {
   )
 }
 
-export default async function LeadsAdminPage() {
+export default async function LeadsAdminPage({ searchParams }) {
+  const params = await searchParams
+  const tenantFilter = String(params?.tenant || '').trim()
   let configured = false
   let leads = []
   let databaseError = ''
 
   try {
-    const result = await listLeads({ limit: 100 })
+    const result = await listLeads({ limit: 100, tenantId: tenantFilter })
     configured = result.configured
     leads = result.leads
   } catch (error) {
@@ -120,6 +123,18 @@ export default async function LeadsAdminPage() {
             <div>
               <h2>Neueste Leads</h2>
               <p>Letzte 100 Einträge aus der internen Postgres-Datenbank.</p>
+              <div className="admin-filter-row">
+                <a className={!tenantFilter ? 'admin-small-link active' : 'admin-small-link'} href="/admin/leads">Alle Tenants</a>
+                {Object.values(TENANT_CONFIGS).map((tenant) => (
+                  <a
+                    key={tenant.tenantId}
+                    className={tenantFilter === tenant.tenantId ? 'admin-small-link active' : 'admin-small-link'}
+                    href={`/admin/leads?tenant=${tenant.tenantId}`}
+                  >
+                    {tenant.tenantId}
+                  </a>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -128,6 +143,7 @@ export default async function LeadsAdminPage() {
               <thead>
                 <tr>
                   <th>Lead</th>
+                  <th>Tenant</th>
                   <th>Segment</th>
                   <th>Objekt</th>
                   <th>Budgetsignal</th>
@@ -144,6 +160,7 @@ export default async function LeadsAdminPage() {
                       <span>{lead.email || 'Keine E-Mail'}</span>
                       <span>{lead.phone || 'Keine Telefonnummer'}</span>
                     </td>
+                    <td>{lead.tenant_id || '—'}</td>
                     <td>
                       <span className={getSegmentClass(lead.segment)}>
                         {lead.priority} · {lead.segment}

@@ -183,21 +183,12 @@ function PhoneInput({ value, onChange, hasError, onClearError }) {
 /* ============================================
    QUIZ DATA CONFIG
    ============================================ */
-const QUIZ_CONFIG = DEFAULT_TENANT_CONFIG.quiz
 const OBJECT_ICON_BY_KEY = {
   garden: IconGarden,
   sun: IconSun,
   document: (props) => QUIZ_ICONS.document(props),
 }
 
-const OBJECTS = QUIZ_CONFIG.propertyOptions.map((option) => ({
-  ...option,
-  Icon: OBJECT_ICON_BY_KEY[option.icon] || ((props) => QUIZ_ICONS.document(props)),
-}))
-const ZEITRAHMEN = QUIZ_CONFIG.purchaseTimelineOptions
-const EIGENKAPITAL = QUIZ_CONFIG.equityBucketOptions
-const FINANZIERUNG = QUIZ_CONFIG.financingStatusOptions
-const TOTAL_STEPS = QUIZ_CONFIG.totalSteps
 const AUTO_ADVANCE_DELAY = 350 // ms — brief flash to show selection
 
 /* ============================================
@@ -227,12 +218,20 @@ function RadioOption({ iconKey, text, selected, onClick, testId }) {
    QUIZ COMPONENT
    ============================================ */
 /* Valid wohnung values for URL pre-selection */
-const VALID_WOHNUNG = QUIZ_CONFIG.propertyOptions.map((option) => option.value)
-const PROPERTY_VALUE_BY_ID = Object.fromEntries(
-  QUIZ_CONFIG.propertyOptions.map((option) => [option.value, option.valueEur || 0]),
-)
-
-export default function Quiz() {
+export default function Quiz({ tenantConfig = DEFAULT_TENANT_CONFIG }) {
+  const QUIZ_CONFIG = tenantConfig.quiz
+  const OBJECTS = QUIZ_CONFIG.propertyOptions.map((option) => ({
+    ...option,
+    Icon: OBJECT_ICON_BY_KEY[option.icon] || ((props) => QUIZ_ICONS[option.icon]?.(props) || QUIZ_ICONS.document(props)),
+  }))
+  const ZEITRAHMEN = QUIZ_CONFIG.purchaseTimelineOptions
+  const EIGENKAPITAL = QUIZ_CONFIG.equityBucketOptions
+  const FINANZIERUNG = QUIZ_CONFIG.financingStatusOptions
+  const TOTAL_STEPS = QUIZ_CONFIG.totalSteps
+  const VALID_WOHNUNG = QUIZ_CONFIG.propertyOptions.map((option) => option.value)
+  const PROPERTY_VALUE_BY_ID = Object.fromEntries(
+    QUIZ_CONFIG.propertyOptions.map((option) => [option.value, option.valueEur || 0]),
+  )
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -367,7 +366,7 @@ export default function Quiz() {
 
     setSubmitting(true)
 
-    const leadScore = calculateLeadScore(answers, DEFAULT_TENANT_CONFIG)
+    const leadScore = calculateLeadScore(answers, tenantConfig)
 
     const source = getUTMParams()
     const demoSource = isDemoMode
@@ -385,8 +384,8 @@ export default function Quiz() {
     const leadData = {
       ...answers,
       ...formData,
-      tenant_id: DEFAULT_TENANT_CONFIG.tenantId,
-      project_id: DEFAULT_TENANT_CONFIG.projectId,
+      tenant_id: tenantConfig.tenantId,
+      project_id: tenantConfig.projectId,
       quiz_version: QUIZ_CONFIG.version,
       lead_score: leadScore,
       underqualified,
@@ -478,7 +477,7 @@ export default function Quiz() {
           {/* ===== STEP 1 — Objektauswahl ===== */}
           {step === 1 && (
             <div className="quiz-step" key={`s1-${animKey}`}>
-              <h3>Welche Wohnung interessiert Sie?</h3>
+              <h3>{QUIZ_CONFIG.propertyQuestion || 'Welche Wohnung interessiert Sie?'}</h3>
               <div className="object-cards">
                 {OBJECTS.map((obj) => (
                   <button
@@ -511,7 +510,7 @@ export default function Quiz() {
           {/* ===== STEP 2 — Zeitrahmen ===== */}
           {step === 2 && (
             <div className="quiz-step" key={`s2-${animKey}`}>
-              <h3>Wann planen Sie den Kauf?</h3>
+              <h3>{QUIZ_CONFIG.purchaseTimelineQuestion || 'Wann planen Sie den Kauf?'}</h3>
               <div className="radio-options">
                 {ZEITRAHMEN.map((opt) => (
                   <RadioOption
@@ -533,7 +532,7 @@ export default function Quiz() {
           {/* ===== STEP 3 — Eigenkapital ===== */}
           {step === 3 && (
             <div className="quiz-step" key={`s3-${animKey}`}>
-              <h3>Wie viel Eigenkapital haben Sie?</h3>
+              <h3>{QUIZ_CONFIG.equityQuestion || 'Wie viel Eigenkapital haben Sie?'}</h3>
               <div className="radio-options">
                 {EIGENKAPITAL.map((opt) => (
                   <RadioOption
@@ -555,7 +554,7 @@ export default function Quiz() {
           {/* ===== STEP 4 — Finanzierung ===== */}
           {step === 4 && (
             <div className="quiz-step" key={`s4-${animKey}`}>
-              <h3>Haben Sie eine Finanzierungszusage?</h3>
+              <h3>{QUIZ_CONFIG.financingQuestion || 'Haben Sie eine Finanzierungszusage?'}</h3>
               <div className="radio-options">
                 {FINANZIERUNG.map((opt) => (
                   <RadioOption
@@ -577,7 +576,7 @@ export default function Quiz() {
           {/* ===== STEP 5 — Kontaktdaten ===== */}
           {step === 5 && (
             <div className="quiz-step" key={`s5-${animKey}`}>
-              <h3>Wohin dürfen wir Ihr Exposé senden?</h3>
+              <h3>{QUIZ_CONFIG.contactQuestion || 'Wohin dürfen wir Ihr Exposé senden?'}</h3>
               <form onSubmit={handleSubmit} noValidate>
                 <input
                   type="text"
@@ -651,9 +650,19 @@ export default function Quiz() {
                         onChange={(e) => { setFormData((f) => ({ ...f, consent: e.target.checked })); setErrors((er) => ({ ...er, consent: false })) }}
                       />
                       <label htmlFor="consent">
-                        Ich stimme der{' '}
-                        <a href="/datenschutz" target="_blank" rel="noopener noreferrer">Datenschutzerklärung</a>{' '}
-                        zu und möchte kontaktiert werden. *
+                        {QUIZ_CONFIG.consentText ? (
+                          <>
+                            {QUIZ_CONFIG.consentText.split('Datenschutzerklärung')[0]}
+                            <a href="/datenschutz" target="_blank" rel="noopener noreferrer">Datenschutzerklärung</a>
+                            {QUIZ_CONFIG.consentText.split('Datenschutzerklärung').slice(1).join('Datenschutzerklärung')}
+                          </>
+                        ) : (
+                          <>
+                            Ich stimme der{' '}
+                            <a href="/datenschutz" target="_blank" rel="noopener noreferrer">Datenschutzerklärung</a>{' '}
+                            zu und möchte kontaktiert werden. *
+                          </>
+                        )}
                       </label>
                     </div>
                     {errors.consent && (
@@ -665,7 +674,7 @@ export default function Quiz() {
                 </div>
                 <div className="quiz-nav" style={{ flexDirection: 'column', gap: 0 }}>
                   <button type="submit" className="btn-submit" disabled={submitting} data-testid="quiz-submit">
-                    {submitting ? 'Wird gesendet...' : 'Exposé kostenlos anfordern →'}
+                    {submitting ? 'Wird gesendet...' : (QUIZ_CONFIG.submitLabel || 'Exposé kostenlos anfordern →')}
                   </button>
                   <p className="submit-trust">
                     <span className="submit-trust-icon">
