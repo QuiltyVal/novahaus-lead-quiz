@@ -1,0 +1,13 @@
+{
+  "bewertungCta": 25,
+  "separateFunnels": 20,
+  "pixelOrGtm": 15,
+  "contactForm": 10,
+  "activeListings": 10,
+  "multiCity": -5,
+  "tiers": {
+    "A": 60,
+    "B": 35,
+    "C": 0
+  }
+}
