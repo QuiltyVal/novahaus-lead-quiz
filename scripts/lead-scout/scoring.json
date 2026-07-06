@@ -5,6 +5,18 @@
   "contactForm": 10,
   "activeListings": 10,
   "multiCity": -5,
+  "intentSignals": {
+    "newListingBoost": 55,
+    "activeListingInventoryBoost": 8,
+    "staleInstagramBoost": 25,
+    "marketingJobBoost": 30,
+    "instagramStaleDays": 60,
+    "priorities": {
+      "P1": 55,
+      "P2": 25,
+      "P3": 0
+    }
+  },
   "tiers": {
     "A": 60,
     "B": 35,

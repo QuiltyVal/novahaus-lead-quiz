@@ -2,6 +2,7 @@
 const fs = require('node:fs/promises');
 const { extractContactInfo, extractSignals, scoreSignals, domainOf, absoluteUrl, extractLinks, extractTitle, extractFirmaFromImpressum } = require('./parser');
 const scoring = require('./scoring.json');
+const { runSignalsCli } = require('./signals');
 
 const COLS = ['Firma','Website','Kontakt-URL','Stadt','Ansprechpartner','Telefon','E-Mail','Score','Tier','Signale','Warum passt','Opener','Kanal','Status','Consent E-Mail','Notizen','Quellen'];
 
@@ -100,8 +101,13 @@ async function inspectLead(lead, city) {
 }
 
 async function main() {
+  if (process.argv[2] === 'signals') {
+    await runSignalsCli(process.argv.slice(3));
+    return;
+  }
   if (has('help') || process.argv.length < 3) {
     console.log('Usage: node scripts/lead-scout --city "Dresden" [--limit 30] [--input urls.txt] [--known existing.csv] [--output leads.csv]');
+    console.log('       node scripts/lead-scout signals --input firms.csv [--output signals.csv]');
     return;
   }
   const city = arg('city', '');
