@@ -3,16 +3,16 @@ import { getDemoScenario } from '@/lib/demoScenarios'
 export const metadata = {
   title: 'Demo Backend-Konsole | NovaHaus Lead-to-Call',
   description:
-    'Demo-safe Backend-Ansicht mit Workflow, Sheet-Zeile und Gmail-Draft für NovaHaus.',
+    'Demo-safe Backend-Ansicht mit Lead-Datensatz, Routing und geprüftem E-Mail-Entwurf für NovaHaus.',
 }
 
 const workflowNodes = [
   ['Lead Webhook', 'POST empfangen'],
   ['Validate + Normalize', 'Daten bereinigen'],
   ['Secret OK?', 'Quelle prüfen'],
-  ['Append Lead to Sheet', 'CRM-Zeile schreiben'],
+  ['Save Lead + Event', 'Datensatz mit stabiler Lead-ID'],
   ['Route by Segment', 'Hot/Warm/Cold entscheiden'],
-  ['Create Gmail Draft', 'Antwort vorbereiten'],
+  ['Prepare E-Mail Draft', 'Antwort vorbereiten'],
   ['Respond OK', 'Website bestätigen'],
 ]
 
@@ -45,8 +45,9 @@ export default function DemoOpsPage({ searchParams }) {
             <h1>{scenario.label}: Lead wurde verarbeitet.</h1>
             <p>
               Diese Ansicht ist für Aufnahmen gebaut. Sie zeigt denselben
-              operativen Ablauf wie n8n, Google Sheets und Gmail Drafts, aber
-              ohne private Accounts oder echte Kundendaten.
+              operativen Ablauf wie das echte System — Lead-Datensatz mit
+              stabiler Lead-ID, Segment-Routing und geprüfter E-Mail-Entwurf —
+              aber ohne private Accounts oder echte Kundendaten.
             </p>
           </div>
           <div className="demo-ops-actions">
@@ -64,8 +65,8 @@ export default function DemoOpsPage({ searchParams }) {
         <div className="container demo-ops-grid">
           <article className="demo-ops-panel demo-workflow-panel">
             <div className="demo-panel-head">
-              <span>n8n Workflow</span>
-              <strong>Published</strong>
+              <span>Lead Pipeline</span>
+              <strong>Live</strong>
             </div>
             <div className="demo-workflow-line">
               {workflowNodes.map(([title, subtitle]) => (
@@ -92,8 +93,8 @@ export default function DemoOpsPage({ searchParams }) {
 
           <article className="demo-ops-panel demo-sheet-panel">
             <div className="demo-panel-head">
-              <span>Google Sheets Row</span>
-              <strong>Appended</strong>
+              <span>Lead-Datensatz</span>
+              <strong>Gespeichert</strong>
             </div>
             <div className="demo-sheet-table">
               {sheetRows(scenario).map(([key, value]) => (
@@ -107,7 +108,7 @@ export default function DemoOpsPage({ searchParams }) {
 
           <article className="demo-ops-panel demo-email-panel">
             <div className="demo-panel-head">
-              <span>Gmail Draft</span>
+              <span>E-Mail-Entwurf</span>
               <strong>Review required</strong>
             </div>
             <div className="demo-email-window">

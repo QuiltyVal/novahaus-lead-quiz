@@ -71,8 +71,8 @@ export default function DankePage() {
               <strong>Demo-Modus erkannt</strong>
               <p>
                 Der Fake Lead wurde lokal simuliert. Für die Aufnahme kannst du
-                jetzt die Backend-Konsole mit Routing, Sheet-Row und Gmail-Draft
-                zeigen.
+                jetzt die Backend-Konsole mit Lead-ID, Routing und geprüftem
+                E-Mail-Entwurf zeigen.
               </p>
               <a href={`/demo/ops?scenario=${demoScenario}`}>
                 Backend-Konsole öffnen

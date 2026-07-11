@@ -44,7 +44,7 @@ export default function DemoPage() {
           <p>
             Diese Seite ist für Videoaufnahmen und Kundendemos gedacht:
             fiktiver Lead, klares Szenario, danach eine saubere Backend-Konsole
-            mit Sheet-Row, Routing und Gmail-Draft.
+            mit stabiler Lead-ID, Ereignis-Historie und geprüftem E-Mail-Entwurf.
           </p>
           <div className="demo-hero-actions">
             <a href={quizUrl('hot')} className="system-btn system-btn-primary">
@@ -110,7 +110,7 @@ export default function DemoPage() {
             <li>Landingpage öffnen und kurz erklären: Immobilien-Lead-Quiz.</li>
             <li>Hot-Lead-Szenario im Demo-Modus durchklicken.</li>
             <li>Absenden: Fake Lead wird als Demo markiert.</li>
-            <li>Backend-Konsole zeigen: n8n-Schritte, Sheet-Row, Gmail-Draft.</li>
+            <li>Backend-Konsole zeigen: Lead-ID, Qualifizierung, E-Mail-Entwurf.</li>
             <li>Mit der B2B-Seite abschließen: was eine Firma bekommt.</li>
           </ol>
         </div>
