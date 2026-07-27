@@ -1,0 +1,10 @@
+node_modules/
+.next/
+.next-verify/
+.git/
+.env
+.env.*
+!.env.example
+!.env.local.example
+coverage/
+*.zip

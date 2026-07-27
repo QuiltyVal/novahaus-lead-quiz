@@ -367,7 +367,7 @@ export async function listLeads({ limit = 100, tenantId = '' } = {}) {
 
 export async function getLeadDetail(leadId) {
   if (!isDatabaseConfigured()) {
-    return { configured: false, lead: null, drafts: [], replies: [] }
+    return { configured: false, lead: null, drafts: [], replies: [], properties: [] }
   }
 
   const leadResult = await query(
@@ -381,7 +381,7 @@ export async function getLeadDetail(leadId) {
   )
 
   if (leadResult.rows.length === 0) {
-    return { configured: true, lead: null, drafts: [], replies: [] }
+    return { configured: true, lead: null, drafts: [], replies: [], properties: [] }
   }
 
   const draftsResult = await query(
@@ -405,11 +405,23 @@ export async function getLeadDetail(leadId) {
     [leadId]
   )
 
+  const propertiesResult = await query(
+    `
+      SELECT p.id, p.external_key, p.title, p.status
+      FROM lead_properties lp
+      JOIN properties p ON p.id = lp.property_id
+      WHERE lp.lead_id = $1
+      ORDER BY p.title ASC
+    `,
+    [leadId]
+  )
+
   return {
     configured: true,
     lead: leadResult.rows[0],
     drafts: draftsResult.rows,
     replies: repliesResult.rows,
+    properties: propertiesResult.rows,
   }
 }
 

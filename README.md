@@ -191,6 +191,7 @@ LEAD_EMAIL_PROVIDER=resend
 RESEND_API_KEY=your-key
 LEAD_EMAIL_FROM="NovaHaus Immobilien <leads@mail.valquilty.com>"
 LEAD_EMAIL_REPLY_TO=me@valquilty.com
+HOT_LEAD_NOTIFY_EMAIL=manager@example.com
 ```
 
 SMTP is also supported:
@@ -208,6 +209,13 @@ LEAD_EMAIL_FROM="NovaHaus Immobilien <leads@novahaus.valquilty.com>"
 Demo or reserved `example.com` leads are skipped unless `DEMO_LEAD_TARGET_EMAIL` is set. This prevents test/demo leads from sending to fake addresses.
 
 Direct customer email always uses the safe template draft. AI-generated copy is only shown in the admin Lead Inbox and can be sent manually after review.
+
+For a `hot` lead, the API also sends a separate internal call task containing the
+stable `lead_id`, phone number, qualification context, and source. Set
+`HOT_LEAD_NOTIFY_EMAIL` to the responsible manager. If it is empty, the app falls
+back to `NOTIFY_EMAIL` and then `LEAD_EMAIL_BCC`. Duplicate leads do not create a
+second call task. Successful customer emails and handoff notifications are written
+to `lead_events` as `direct_email_sent` and `hot_handoff_notified`.
 
 ## Resend Inbound Replies
 
@@ -249,6 +257,32 @@ Test:
 5. Open the same lead card in `/admin/leads/{lead_id}`. The lead status should be `replied`, and the reply should appear under **Antworten**.
 
 The webhook validates Resend's Svix signature before doing any work. Resend's `email.received` webhook only contains metadata, so `/api/inbound-email` fetches the full email body through the Resend Received Emails API before saving `reply_received` into `lead_events`.
+
+## Content, Objects, And Instagram Metrics
+
+The internal admin now uses the same Neon database for published Reels and buyer-lead attribution:
+
+```text
+/admin/content  -> published Reels and manual Insights snapshots
+/admin/objects  -> objects, linked Reels, latest metrics, and leads
+/admin/clients  -> tenant/client boundaries and Instagram accounts
+```
+
+Apply the additive schema and the idempotent Augenblick backfill with a local env file that contains `DATABASE_URL`:
+
+```bash
+npm run db:check-content -- --env /secure/path/production.env
+npm run db:migrate-content -- --env /secure/path/production.env
+npm run db:backfill-content -- --env /secure/path/production.env
+npm run db:check-growth-lab -- --env /secure/path/production.env
+npm run db:migrate-growth-lab -- --env /secure/path/production.env
+```
+
+The check commands run their migration in a transaction and roll it back. The content migration/backfill registers the original inventory; the Growth-Lab migration adds video-level `content_class` and `hypothesis`, then classifies existing Augenblick video records through Reel 015. Historical hypotheses intentionally stay `NULL`. The runner never prints the database URL.
+
+Publication remains manual. For a new Growth-Lab Reel, preregister class/hypothesis in `/admin/content` before publishing. After upload, select that draft in the registration form, attach its permalink, then add cumulative snapshots at 24h, 72h, and 7d. Unknown metrics stay `NULL`; they are not converted to zero.
+
+One database serves all clients. New content and object tables use the existing `tenant_id` as the stable client boundary. Composite foreign keys prevent a Reel or lead from being linked to an object owned by another client.
 
 ## n8n Workflow
 

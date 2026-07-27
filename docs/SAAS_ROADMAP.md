@@ -25,6 +25,102 @@ It centralizes:
 - workflow segment rules
 - email signature and AI drafting rules
 
+## Deferred Object Storefront: activate after the first property client
+
+Decision recorded on 2026-07-16.
+
+The current Instagram phase has no real inventory. Its purpose is to prove channel growth with AI concept-property media and win the first agency contract. Fictional concept content must not be inserted into the live `properties` inventory as an active offer and must not generate pretend buyer leads.
+
+The object storefront and buyer-routing layer remain planned, but are deferred until a client supplies real properties, confirmed facts, current availability, media rights, and a handoff owner.
+
+### Attribution decision: object first, Reel source second
+
+The public buyer journey must not require a visible Reel code. Asking a visitor to remember or enter `R018` creates unnecessary friction.
+
+Primary business attribution:
+
+```text
+buyer selects property
+-> property_id is carried through shortlist / enquiry / quiz
+-> lead_properties links lead_id to property_id
+-> the agency can see which property produced the enquiry
+```
+
+Content-source attribution stays internal and optional:
+
+```text
+videos.id / videos.reel_code
+-> social_posts.id / platform_media_id
+-> post_properties
+-> optional leads.source_post_id and UTM metadata
+```
+
+Rules:
+
+- `property_id` is the primary link for buyer intent and lead routing.
+- `video_id`, `social_post_id`, and `reel_code` are internal analytics identifiers; they are not shown as a required user action.
+- `source_post_id` may be captured automatically from a paid-ad URL, Story link, deep link, first-party session, or UTM parameters.
+- A shared organic bio link cannot prove which Reel caused a profile visit. Preserve this as `unknown` instead of forcing a code-entry step or inventing attribution.
+- One property may have many Reels/posts, and one lead may select several properties through `lead_properties`.
+- Content performance and property demand are separate questions: Reel metrics explain audience growth; `lead_properties` explains buyer choice.
+
+### Reporting semantics
+
+`post_properties` means that a post featured an object. It does **not** prove that the post caused a later lead for that object.
+
+The current content reporting path joins `post_properties -> lead_properties`, so one lead for a property may appear beside every Reel that ever featured that property. Future reporting must split these metrics:
+
+- `object_interest_leads`: leads that selected an object featured in the post, with no causal Reel claim;
+- `attributed_leads`: leads where `leads.source_post_id = social_posts.id` or another deterministic ad/deep-link touch exists;
+- content performance: reach, views, saves, shares, follows and profile actions;
+- acquisition source: organic Instagram, Story, Meta Ad, direct, or `unknown`.
+
+Never label `object_interest_leads` as Reel-generated leads.
+
+### Future public routes
+
+Build only after real inventory exists:
+
+```text
+/objekte                  active real-property catalogue
+/objekt/[public_slug]     verified object page
+/merken                   shortlist
+/quiz?property_id=...     buyer qualification with selected object preserved
+```
+
+The object page should carry `property_id` automatically into `ViewContent`, shortlist, enquiry, and `Lead` events. If source metadata exists, keep it alongside the object link without making it mandatory.
+
+When implementation starts, make the `source_post_id` relation tenant-safe with a composite foreign key `(source_post_id, tenant_id) -> (social_posts.id, tenant_id)`.
+
+Minimum future property fields:
+
+- `property_id` and stable public slug;
+- client/tenant and handoff owner;
+- availability status;
+- district, price, area, rooms, property type;
+- verified public description and media;
+- media-rights status;
+- linked social posts;
+- similar active properties.
+
+If an object becomes unavailable, preserve the page as unavailable and show real alternatives rather than deleting the attribution surface or presenting stale availability.
+
+### Phase boundary
+
+Before the first contract:
+
+- public CTA is follow/save/share and the B2B proof page;
+- website may show a creative portfolio, but not a fake buyer catalogue;
+- channel growth and production repeatability are the sales proof.
+
+After the first contract:
+
+- ingest real properties;
+- enable object catalogue and shortlist;
+- connect `property_id` to lead submission;
+- add automatic source-post metadata where available;
+- activate Pixel/CAPI object events and property lead campaigns.
+
 ## Phase 0.5: `/api/lead` Hardening Backlog
 
 Source: Fable/Claude audit, saved on 2026-06-09.

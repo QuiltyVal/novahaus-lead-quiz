@@ -3203,6 +3203,28 @@ a {
   line-height: 1.1;
 }
 
+.admin-nav {
+  display: flex;
+  gap: 4px;
+  max-width: 1280px;
+  margin: -10px auto 22px;
+  border-bottom: 1px solid #ded8cd;
+  overflow-x: auto;
+}
+
+.admin-nav-link {
+  border-bottom: 3px solid transparent;
+  color: #687480;
+  flex: 0 0 auto;
+  font-weight: 800;
+  padding: 11px 14px 10px;
+}
+
+.admin-nav-link.active {
+  border-bottom-color: #be4a74;
+  color: #18232d;
+}
+
 .admin-link-button {
   display: inline-flex;
   align-items: center;
@@ -3281,6 +3303,19 @@ a {
   color: #273441;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   padding: 2px 5px;
+}
+
+.admin-section-gap {
+  margin-bottom: 18px;
+}
+
+.admin-flash {
+  max-width: 1280px;
+  margin: 0 auto 18px;
+  border: 1px solid #d4cec2;
+  border-radius: 8px;
+  font-weight: 700;
+  padding: 12px 14px;
 }
 
 .admin-panel-heading {
@@ -3379,6 +3414,35 @@ a {
   gap: 6px;
 }
 
+.admin-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.admin-form-grid label {
+  color: #3a4652;
+  display: grid;
+  font-size: 13px;
+  font-weight: 800;
+  gap: 6px;
+}
+
+.admin-form-wide {
+  grid-column: 1 / -1;
+}
+
+.admin-form-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.admin-help {
+  color: #687480;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .admin-input,
 .admin-textarea {
   width: 100%;
@@ -3394,6 +3458,14 @@ a {
 .admin-textarea {
   min-height: 280px;
   resize: vertical;
+}
+
+.admin-textarea-compact {
+  min-height: 110px;
+}
+
+.admin-multi-select {
+  min-height: 104px;
 }
 
 .admin-input:disabled,
@@ -3500,6 +3572,10 @@ a {
   border-collapse: collapse;
 }
 
+.admin-content-table {
+  min-width: 1180px;
+}
+
 .admin-table th {
   border-bottom: 1px solid #ded8cd;
   color: #687480;
@@ -3578,8 +3654,21 @@ a {
   }
 
   .admin-detail-grid,
-  .admin-field-grid {
+  .admin-field-grid,
+  .admin-form-grid {
     grid-template-columns: 1fr;
+  }
+
+  .admin-form-wide {
+    grid-column: auto;
+  }
+
+  .admin-form-actions {
+    justify-content: stretch;
+  }
+
+  .admin-form-actions .admin-primary-button {
+    width: 100%;
   }
 
   .admin-draft-footer {

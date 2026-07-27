@@ -106,6 +106,12 @@ The workflow routes by segment:
 
 For MVP stage 1, the branch nodes only annotate the path before responding to the website.
 
+The Next.js app now provides the concrete hot-lead fallback: it sends an internal
+call-task email to `HOT_LEAD_NOTIFY_EMAIL` (or `NOTIFY_EMAIL` / `LEAD_EMAIL_BCC`)
+and records `hot_handoff_notified` in Postgres. The n8n hot branch remains a
+placeholder until a client-specific Slack, Telegram, CRM, or call-center target
+is selected.
+
 Next iterations:
 
 - replace `Hot Lead Task Placeholder` with Slack/Telegram/CRM/call-center task

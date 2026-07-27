@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import AdminNav from '@/components/AdminNav'
 import { getLeadDetail } from '@/lib/leadStore'
 
 export const dynamic = 'force-dynamic'
@@ -81,7 +82,7 @@ export default async function LeadDetailPage({ params, searchParams }) {
     notFound()
   }
 
-  const { lead, drafts, replies } = result
+  const { lead, drafts, replies, properties } = result
   const draft = drafts[0] || null
   const isDraftSent = draft?.status === 'sent'
   const raw = lead.raw && typeof lead.raw === 'object' ? lead.raw : {}
@@ -102,6 +103,7 @@ export default async function LeadDetailPage({ params, searchParams }) {
           </Link>
         </div>
       </header>
+      <AdminNav active="leads" />
 
       <div className="admin-detail-grid">
         <section className="admin-panel">
@@ -119,6 +121,7 @@ export default async function LeadDetailPage({ params, searchParams }) {
             <Field label="E-Mail" value={lead.email} />
             <Field label="Telefon" value={lead.phone} />
             <Field label="Objekt" value={lead.wohnung_label} />
+            <Field label="Verknüpfte DB-Objekte" value={properties.map((property) => property.title).join(', ')} />
             <Field label="Zeitrahmen" value={lead.purchase_timeline_label} />
             <Field label="Eigenkapital" value={lead.equity_bucket_label} />
             <Field label="Finanzierung" value={lead.financing_status_label} />

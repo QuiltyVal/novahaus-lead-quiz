@@ -1,4 +1,4 @@
-# NovaHaus Lead-to-Call Sales Playbook
+# NovaHaus Reel-to-Lead Sales Playbook
 
 Use this when presenting the system to real-estate firms, agencies, developers, or broker teams.
 
@@ -9,14 +9,15 @@ Do not sell this as "AI replaces sales".
 Sell it as:
 
 ```text
-A fast-response lead qualification system for real-estate teams.
-It captures intent, qualifies the lead, prepares the follow-up, and gives sales a clear call context.
+A measurable organic acquisition system for real-estate teams.
+AI Reels turn existing property photos into attention. The quiz captures intent,
+qualifies the lead, prepares the follow-up, and gives sales a clear call context.
 ```
 
 Core promise:
 
 ```text
-Reduce lead cooling time and make every inquiry easier to act on.
+Create organic entry points repeatedly, then make every inquiry easier to act on.
 ```
 
 ## Demo Flow
@@ -27,28 +28,29 @@ Reduce lead cooling time and make every inquiry easier to act on.
 https://novahaus.valquilty.com/system
 ```
 
-2. Open the live consumer demo:
+2. Start with the demo-safe system overview:
 
 ```text
-https://novahaus.valquilty.com
+https://novahaus.valquilty.com/demo
 ```
 
-3. Run one quiz submission:
+3. Walk through the hot scenario without writing real data:
 
 ```text
-https://novahaus.valquilty.com/quiz
+https://novahaus.valquilty.com/quiz?demo=hot
 ```
 
-4. Show the operational backend:
+4. Show the privacy-safe operational view:
 
 ```text
-n8n execution -> Google Sheets row -> Email Queue row -> Gmail draft
+https://novahaus.valquilty.com/demo/ops?scenario=hot
 ```
 
-5. Explain the safety layer:
+5. Explain the proven private flow without opening private services:
 
 ```text
-AI creates drafts, not automatic sends. The human reviews before sending.
+Quiz -> stable lead_id -> Postgres Lead Inbox -> reviewed email -> reply/call handoff.
+AI creates drafts, not blind sends. The human reviews before sending.
 ```
 
 ## Demo-Safe Recording Flow
@@ -73,21 +75,24 @@ are fake and use reserved `example.com` addresses.
 https://novahaus.valquilty.com/demo/ops?scenario=hot
 ```
 
-5. Explain that the console is the privacy-safe recording view. In a private
-sales call you can also open the real n8n execution, Google Sheet, and Gmail
-draft if needed.
+5. Explain that the console is the privacy-safe recording view. Do not open
+private n8n, database, email, or client accounts during the SRM presentation.
 
 Recommended talk track:
 
 ```text
-This is a demo-safe run. The real workflow can write to n8n, Google Sheets,
-CRM, and Gmail drafts, but for public video I show the same operational fields
-without exposing private accounts.
+This is a demo-safe run. Before the meeting, the private acceptance run verifies
+that the same lead ID reaches the Lead Inbox, event history, reviewed email, and
+hot-lead call task. Here I show the same operational fields without exposing
+private accounts or personal data.
 ```
 
 ## What To Ask A Prospect
 
 - How many leads do you get per month?
+- Which Instagram account and property should the pilot use?
+- Which property photos and publishing rights are available?
+- Which Reel CTA should lead into the quiz?
 - Which channels generate them: Meta, Google, portals, landing pages, referrals?
 - How fast does a manager usually respond?
 - What CRM or spreadsheet do you use?
@@ -104,11 +109,12 @@ For one property, one market, one lead workflow.
 
 Includes:
 
+- a limited series of AI Reels from one property's approved material
+- CTA and UTM source mapping for each Reel
 - quiz landing page
 - lead qualification logic
-- n8n workflow
-- Google Sheets or CRM sync
-- Gmail draft follow-up
+- Postgres Lead Inbox and event history
+- human-reviewed email follow-up
 - hot/warm/cold routing
 
 ### Implementation
@@ -159,14 +165,15 @@ The demo uses cookie consent for marketing trackers, avoids public API keys, and
 ## Follow-up Email Template
 
 ```text
-Subject: Lead response workflow for your real-estate inquiries
+Subject: Reel-to-Lead pilot for one property
 
 Hi [Name],
 
-I built a small working demo of a real-estate lead-to-call system:
-quiz landing page -> lead qualification -> workflow automation -> CRM/Sheet entry -> AI email draft -> sales handoff.
+I built a working real-estate Reel-to-Lead demo:
+property photos -> organic AI Reels -> quiz -> lead qualification -> reviewed email -> sales handoff.
 
-The goal is not to replace sales, but to make sure new inquiries are handled while they are still warm and sales receives useful context before calling.
+The goal is not to replace sales. It is to create repeatable organic entry points,
+then make sure each inquiry reaches the right next step with useful context.
 
 Demo:
 https://novahaus.valquilty.com/system

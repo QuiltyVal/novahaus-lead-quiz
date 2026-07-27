@@ -1,0 +1,555 @@
+{
+  "meta": {
+    "title": "Leipzig-Einschätzung",
+    "stand": "2026-07-22",
+    "language": "de",
+    "methodNote": "Es werden ausschließlich amtliche Primärquellen und daraus transparent berechnete Werte verwendet."
+  },
+  "rent": {
+    "title": "Bestandsmieten nach Ortsteil",
+    "definition": "Median der monatlichen Grundmiete je Quadratmeter in bestehenden Mietverträgen; Stand der Befragung jeweils Oktober 2023. Es handelt sich nicht um Angebotsmieten.",
+    "areas": [
+      {
+        "area": "Plagwitz",
+        "rent": {
+          "value": 7.82,
+          "unit": "EUR/m²",
+          "scope": "Leipzig",
+          "source": "Stadt Leipzig, Amt für Statistik und Wahlen – Kommunale Bürgerumfrage 2023 / Leipzig-Informationssystem",
+          "sourceUrl": "https://statistik.leipzig.de/statdist/table.aspx?cat=6&rub=6",
+          "publishedAt": "2024-12",
+          "checkedAt": "2026-07-22",
+          "referenceArea": "Ortsteil Plagwitz",
+          "referenceDate": "2023-10"
+        }
+      },
+      {
+        "area": "Connewitz",
+        "rent": {
+          "value": 6.76,
+          "unit": "EUR/m²",
+          "scope": "Leipzig",
+          "source": "Stadt Leipzig, Amt für Statistik und Wahlen – Kommunale Bürgerumfrage 2023 / Leipzig-Informationssystem",
+          "sourceUrl": "https://statistik.leipzig.de/statdist/table.aspx?cat=6&rub=6",
+          "publishedAt": "2024-12",
+          "checkedAt": "2026-07-22",
+          "referenceArea": "Ortsteil Connewitz",
+          "referenceDate": "2023-10"
+        }
+      },
+      {
+        "area": "Südvorstadt",
+        "rent": {
+          "value": 7.78,
+          "unit": "EUR/m²",
+          "scope": "Leipzig",
+          "source": "Stadt Leipzig, Amt für Statistik und Wahlen – Kommunale Bürgerumfrage 2023 / Leipzig-Informationssystem",
+          "sourceUrl": "https://statistik.leipzig.de/statdist/table.aspx?cat=6&rub=6",
+          "publishedAt": "2024-12",
+          "checkedAt": "2026-07-22",
+          "referenceArea": "Ortsteil Südvorstadt",
+          "referenceDate": "2023-10"
+        }
+      },
+      {
+        "area": "Gohlis-Süd",
+        "requestedArea": "Gohlis",
+        "rent": {
+          "value": 6.92,
+          "unit": "EUR/m²",
+          "scope": "Leipzig",
+          "source": "Stadt Leipzig, Amt für Statistik und Wahlen – Kommunale Bürgerumfrage 2023 / Leipzig-Informationssystem",
+          "sourceUrl": "https://statistik.leipzig.de/statdist/table.aspx?cat=6&rub=6",
+          "publishedAt": "2024-12",
+          "checkedAt": "2026-07-22",
+          "referenceArea": "Ortsteil Gohlis-Süd",
+          "referenceDate": "2023-10"
+        }
+      },
+      {
+        "area": "Gohlis-Mitte",
+        "requestedArea": "Gohlis",
+        "rent": {
+          "value": 7.07,
+          "unit": "EUR/m²",
+          "scope": "Leipzig",
+          "source": "Stadt Leipzig, Amt für Statistik und Wahlen – Kommunale Bürgerumfrage 2023 / Leipzig-Informationssystem",
+          "sourceUrl": "https://statistik.leipzig.de/statdist/table.aspx?cat=6&rub=6",
+          "publishedAt": "2024-12",
+          "checkedAt": "2026-07-22",
+          "referenceArea": "Ortsteil Gohlis-Mitte",
+          "referenceDate": "2023-10"
+        }
+      },
+      {
+        "area": "Gohlis-Nord",
+        "requestedArea": "Gohlis",
+        "rent": {
+          "value": 6.4,
+          "unit": "EUR/m²",
+          "scope": "Leipzig",
+          "source": "Stadt Leipzig, Amt für Statistik und Wahlen – Kommunale Bürgerumfrage 2023 / Leipzig-Informationssystem",
+          "sourceUrl": "https://statistik.leipzig.de/statdist/table.aspx?cat=6&rub=6",
+          "publishedAt": "2024-12",
+          "checkedAt": "2026-07-22",
+          "referenceArea": "Ortsteil Gohlis-Nord",
+          "referenceDate": "2023-10"
+        }
+      },
+      {
+        "area": "Zentrum",
+        "rent": {
+          "value": 9.03,
+          "unit": "EUR/m²",
+          "scope": "Leipzig",
+          "source": "Stadt Leipzig, Amt für Statistik und Wahlen – Kommunale Bürgerumfrage 2023 / Leipzig-Informationssystem",
+          "sourceUrl": "https://statistik.leipzig.de/statdist/table.aspx?cat=6&rub=6",
+          "publishedAt": "2024-12",
+          "checkedAt": "2026-07-22",
+          "referenceArea": "Ortsteil Zentrum",
+          "referenceDate": "2023-10"
+        }
+      },
+      {
+        "area": "Schleußig",
+        "rent": {
+          "value": 7.55,
+          "unit": "EUR/m²",
+          "scope": "Leipzig",
+          "source": "Stadt Leipzig, Amt für Statistik und Wahlen – Kommunale Bürgerumfrage 2023 / Leipzig-Informationssystem",
+          "sourceUrl": "https://statistik.leipzig.de/statdist/table.aspx?cat=6&rub=6",
+          "publishedAt": "2024-12",
+          "checkedAt": "2026-07-22",
+          "referenceArea": "Ortsteil Schleußig",
+          "referenceDate": "2023-10"
+        }
+      },
+      {
+        "area": "Lindenau",
+        "rent": {
+          "value": 7.89,
+          "unit": "EUR/m²",
+          "scope": "Leipzig",
+          "source": "Stadt Leipzig, Amt für Statistik und Wahlen – Kommunale Bürgerumfrage 2023 / Leipzig-Informationssystem",
+          "sourceUrl": "https://statistik.leipzig.de/statdist/table.aspx?cat=6&rub=6",
+          "publishedAt": "2024-12",
+          "checkedAt": "2026-07-22",
+          "referenceArea": "Ortsteil Lindenau",
+          "referenceDate": "2023-10"
+        }
+      }
+    ]
+  },
+  "purchase": {
+    "title": "Kaufpreise: amtliche Vergleichsebene",
+    "definition": "Median der Kauffälle 2025 für sanierte Altbau-Eigentumswohnungen im Wiederverkauf, ohne Stellplatz. Der Marktbericht veröffentlicht diesen einheitlichen Vergleich auf Ebene der Stadtbezirke, nicht für jeden einzelnen Ortsteil.",
+    "areas": [
+      {
+        "area": "Plagwitz",
+        "comparisonArea": "Stadtbezirk Südwest",
+        "price": {
+          "value": 2948,
+          "unit": "EUR/m²",
+          "scope": "Leipzig",
+          "source": "Gutachterausschuss in der Stadt Leipzig – Grundstücksmarktbericht 2026, Tabelle 99",
+          "sourceUrl": "https://www.leipzig.de/fileadmin/mediendatenbank/leipzig-de/Stadt/02.6_Dez6_Stadtentwicklung_Bau/62_Amt_fuer_Geoinformationen_und_Bodenordnung/Gutachterausschuss/Marktbericht_Leipzig_2026_02.pdf",
+          "publishedAt": "2026-03",
+          "checkedAt": "2026-07-22",
+          "referenceArea": "Stadtbezirk Südwest",
+          "referenceDate": "2025"
+        }
+      },
+      {
+        "area": "Connewitz",
+        "comparisonArea": "Stadtbezirk Süd",
+        "price": {
+          "value": 3000,
+          "unit": "EUR/m²",
+          "scope": "Leipzig",
+          "source": "Gutachterausschuss in der Stadt Leipzig – Grundstücksmarktbericht 2026, Tabelle 99",
+          "sourceUrl": "https://www.leipzig.de/fileadmin/mediendatenbank/leipzig-de/Stadt/02.6_Dez6_Stadtentwicklung_Bau/62_Amt_fuer_Geoinformationen_und_Bodenordnung/Gutachterausschuss/Marktbericht_Leipzig_2026_02.pdf",
+          "publishedAt": "2026-03",
+          "checkedAt": "2026-07-22",
+          "referenceArea": "Stadtbezirk Süd",
+          "referenceDate": "2025"
+        }
+      },
+      {
+        "area": "Südvorstadt",
+        "comparisonArea": "Stadtbezirk Süd",
+        "price": {
+          "value": 3000,
+          "unit": "EUR/m²",
+          "scope": "Leipzig",
+          "source": "Gutachterausschuss in der Stadt Leipzig – Grundstücksmarktbericht 2026, Tabelle 99",
+          "sourceUrl": "https://www.leipzig.de/fileadmin/mediendatenbank/leipzig-de/Stadt/02.6_Dez6_Stadtentwicklung_Bau/62_Amt_fuer_Geoinformationen_und_Bodenordnung/Gutachterausschuss/Marktbericht_Leipzig_2026_02.pdf",
+          "publishedAt": "2026-03",
+          "checkedAt": "2026-07-22",
+          "referenceArea": "Stadtbezirk Süd",
+          "referenceDate": "2025"
+        }
+      },
+      {
+        "area": "Gohlis",
+        "comparisonArea": "Stadtbezirk Nord",
+        "price": {
+          "value": 2633,
+          "unit": "EUR/m²",
+          "scope": "Leipzig",
+          "source": "Gutachterausschuss in der Stadt Leipzig – Grundstücksmarktbericht 2026, Tabelle 99",
+          "sourceUrl": "https://www.leipzig.de/fileadmin/mediendatenbank/leipzig-de/Stadt/02.6_Dez6_Stadtentwicklung_Bau/62_Amt_fuer_Geoinformationen_und_Bodenordnung/Gutachterausschuss/Marktbericht_Leipzig_2026_02.pdf",
+          "publishedAt": "2026-03",
+          "checkedAt": "2026-07-22",
+          "referenceArea": "Stadtbezirk Nord",
+          "referenceDate": "2025"
+        }
+      },
+      {
+        "area": "Zentrum",
+        "comparisonArea": "Stadtbezirk Mitte",
+        "price": {
+          "value": 3422,
+          "unit": "EUR/m²",
+          "scope": "Leipzig",
+          "source": "Gutachterausschuss in der Stadt Leipzig – Grundstücksmarktbericht 2026, Tabelle 99",
+          "sourceUrl": "https://www.leipzig.de/fileadmin/mediendatenbank/leipzig-de/Stadt/02.6_Dez6_Stadtentwicklung_Bau/62_Amt_fuer_Geoinformationen_und_Bodenordnung/Gutachterausschuss/Marktbericht_Leipzig_2026_02.pdf",
+          "publishedAt": "2026-03",
+          "checkedAt": "2026-07-22",
+          "referenceArea": "Stadtbezirk Mitte",
+          "referenceDate": "2025"
+        }
+      },
+      {
+        "area": "Schleußig",
+        "comparisonArea": "Stadtbezirk Südwest",
+        "price": {
+          "value": 2948,
+          "unit": "EUR/m²",
+          "scope": "Leipzig",
+          "source": "Gutachterausschuss in der Stadt Leipzig – Grundstücksmarktbericht 2026, Tabelle 99",
+          "sourceUrl": "https://www.leipzig.de/fileadmin/mediendatenbank/leipzig-de/Stadt/02.6_Dez6_Stadtentwicklung_Bau/62_Amt_fuer_Geoinformationen_und_Bodenordnung/Gutachterausschuss/Marktbericht_Leipzig_2026_02.pdf",
+          "publishedAt": "2026-03",
+          "checkedAt": "2026-07-22",
+          "referenceArea": "Stadtbezirk Südwest",
+          "referenceDate": "2025"
+        }
+      },
+      {
+        "area": "Lindenau",
+        "comparisonArea": "Stadtbezirk Alt-West",
+        "price": {
+          "value": 2563,
+          "unit": "EUR/m²",
+          "scope": "Leipzig",
+          "source": "Gutachterausschuss in der Stadt Leipzig – Grundstücksmarktbericht 2026, Tabelle 99",
+          "sourceUrl": "https://www.leipzig.de/fileadmin/mediendatenbank/leipzig-de/Stadt/02.6_Dez6_Stadtentwicklung_Bau/62_Amt_fuer_Geoinformationen_und_Bodenordnung/Gutachterausschuss/Marktbericht_Leipzig_2026_02.pdf",
+          "publishedAt": "2026-03",
+          "checkedAt": "2026-07-22",
+          "referenceArea": "Stadtbezirk Alt-West",
+          "referenceDate": "2025"
+        }
+      }
+    ],
+    "exampleBasis": {
+      "averageArea": {
+        "value": 68,
+        "unit": "m²",
+        "scope": "Leipzig",
+        "source": "Gutachterausschuss in der Stadt Leipzig – Grundstücksmarktbericht 2026, Tabelle 99",
+        "sourceUrl": "https://www.leipzig.de/fileadmin/mediendatenbank/leipzig-de/Stadt/02.6_Dez6_Stadtentwicklung_Bau/62_Amt_fuer_Geoinformationen_und_Bodenordnung/Gutachterausschuss/Marktbericht_Leipzig_2026_02.pdf",
+        "publishedAt": "2026-03",
+        "checkedAt": "2026-07-22",
+        "referenceArea": "Stadt Leipzig",
+        "referenceDate": "2025",
+        "segment": "Sanierter Altbau, Wiederverkauf, ohne Stellplatz"
+      },
+      "cityMedian": {
+        "value": 2770,
+        "unit": "EUR/m²",
+        "scope": "Leipzig",
+        "source": "Gutachterausschuss in der Stadt Leipzig – Grundstücksmarktbericht 2026, Tabelle 99",
+        "sourceUrl": "https://www.leipzig.de/fileadmin/mediendatenbank/leipzig-de/Stadt/02.6_Dez6_Stadtentwicklung_Bau/62_Amt_fuer_Geoinformationen_und_Bodenordnung/Gutachterausschuss/Marktbericht_Leipzig_2026_02.pdf",
+        "publishedAt": "2026-03",
+        "checkedAt": "2026-07-22",
+        "referenceArea": "Stadt Leipzig",
+        "referenceDate": "2025",
+        "segment": "Sanierter Altbau, Wiederverkauf, ohne Stellplatz"
+      },
+      "purchasePrice": {
+        "value": 188360,
+        "unit": "EUR",
+        "scope": "Leipzig",
+        "source": "Eigene Berechnung aus Grundstücksmarktbericht 2026, Tabelle 99",
+        "sourceUrl": "https://www.leipzig.de/fileadmin/mediendatenbank/leipzig-de/Stadt/02.6_Dez6_Stadtentwicklung_Bau/62_Amt_fuer_Geoinformationen_und_Bodenordnung/Gutachterausschuss/Marktbericht_Leipzig_2026_02.pdf",
+        "publishedAt": "2026-03",
+        "checkedAt": "2026-07-22",
+        "calculation": "68 m² × 2.770 EUR/m²",
+        "kind": "derived-example"
+      }
+    }
+  },
+  "costs": {
+    "title": "Kaufnebenkosten in Sachsen",
+    "exampleNote": "Rechenbeispiel ohne Makler, Finanzierung und Grundschuldbestellung. Notar- und Grundbuchkosten hängen vom tatsächlichen Vorgang ab.",
+    "grunderwerbsteuerRate": {
+      "value": 5.5,
+      "unit": "%",
+      "scope": "Sachsen",
+      "source": "Sächsisches Grunderwerbsteuersatzgesetz",
+      "sourceUrl": "https://www.revosax.sachsen.de/vorschrift/19800-Saechsisches-Grunderwerbsteuersatzgesetz",
+      "publishedAt": "2022-12",
+      "checkedAt": "2026-07-22"
+    },
+    "notaryFeeUnit": {
+      "value": 435,
+      "unit": "EUR",
+      "scope": "Deutschland",
+      "source": "GNotKG Anlage 2, Tabelle B, Geschäftswert bis 200.000 EUR",
+      "sourceUrl": "https://www.gesetze-im-internet.de/gnotkg/anlage_2.html",
+      "publishedAt": "2025-04",
+      "checkedAt": "2026-07-22"
+    },
+    "example": {
+      "purchasePrice": {
+        "value": 188360,
+        "unit": "EUR",
+        "scope": "Leipzig",
+        "source": "Eigene Berechnung aus Grundstücksmarktbericht 2026, Tabelle 99",
+        "sourceUrl": "https://www.leipzig.de/fileadmin/mediendatenbank/leipzig-de/Stadt/02.6_Dez6_Stadtentwicklung_Bau/62_Amt_fuer_Geoinformationen_und_Bodenordnung/Gutachterausschuss/Marktbericht_Leipzig_2026_02.pdf",
+        "publishedAt": "2026-03",
+        "checkedAt": "2026-07-22",
+        "calculation": "68 m² × 2.770 EUR/m²",
+        "kind": "derived-example"
+      },
+      "grunderwerbsteuer": {
+        "value": 10359.8,
+        "unit": "EUR",
+        "scope": "Sachsen",
+        "source": "Eigene Berechnung nach Sächsischem Grunderwerbsteuersatzgesetz",
+        "sourceUrl": "https://www.revosax.sachsen.de/vorschrift/19800-Saechsisches-Grunderwerbsteuersatzgesetz",
+        "publishedAt": "2022-12",
+        "checkedAt": "2026-07-22",
+        "calculation": "188.360 EUR × 5,5 %",
+        "kind": "derived-example"
+      },
+      "notary": {
+        "value": 1588.65,
+        "unit": "EUR",
+        "scope": "Deutschland",
+        "source": "Eigene Modellrechnung nach GNotKG und Kostenbeispiel der Bundesnotarkammer",
+        "sourceUrl": "https://www.notar.de/themen/notarkosten/beispiele",
+        "publishedAt": "2025-04",
+        "checkedAt": "2026-07-22",
+        "calculation": "(2,0 + 0,5 + 0,5) × 435 EUR + 30 EUR Auslagen, darauf 19 % USt",
+        "kind": "derived-example"
+      },
+      "landRegister": {
+        "value": 652.5,
+        "unit": "EUR",
+        "scope": "Deutschland",
+        "source": "Eigene Modellrechnung nach GNotKG Anlage 1, KV 14110 und 14150, sowie Anlage 2 Tabelle B",
+        "sourceUrl": "https://www.gesetze-im-internet.de/gnotkg/anlage_1.html",
+        "publishedAt": "2025-04",
+        "checkedAt": "2026-07-22",
+        "calculation": "1,0 × 435 EUR Eigentumsumschreibung + 0,5 × 435 EUR Auflassungsvormerkung",
+        "kind": "derived-example"
+      },
+      "broker": {
+        "value": 0,
+        "unit": "EUR",
+        "scope": "Deutschland",
+        "source": "Rechenannahme ohne Makler; §§ 656c und 656d BGB regeln die Verteilung, nicht die Höhe",
+        "sourceUrl": "https://www.gesetze-im-internet.de/bgb/__656c.html",
+        "publishedAt": "2020-12",
+        "checkedAt": "2026-07-22",
+        "calculation": "Kein Makler im Rechenbeispiel",
+        "kind": "assumption"
+      },
+      "totalAcquisitionCosts": {
+        "value": 12600.95,
+        "unit": "EUR",
+        "scope": "Sachsen",
+        "source": "Eigene Summe der ausgewiesenen Modellpositionen",
+        "sourceUrl": "https://www.revosax.sachsen.de/vorschrift/19800-Saechsisches-Grunderwerbsteuersatzgesetz",
+        "publishedAt": "2026-07",
+        "checkedAt": "2026-07-22",
+        "calculation": "10.359,80 + 1.588,65 + 652,50 + 0,00 EUR",
+        "kind": "derived-example"
+      },
+      "totalAcquisitionCostRate": {
+        "value": 6.69,
+        "unit": "%",
+        "scope": "Sachsen",
+        "source": "Eigene Berechnung aus den ausgewiesenen Modellpositionen",
+        "sourceUrl": "https://www.revosax.sachsen.de/vorschrift/19800-Saechsisches-Grunderwerbsteuersatzgesetz",
+        "publishedAt": "2026-07",
+        "checkedAt": "2026-07-22",
+        "calculation": "12.600,95 EUR ÷ 188.360 EUR × 100",
+        "kind": "derived-example"
+      }
+    },
+    "brokerRule": {
+      "text": "Für Wohnungen und Einfamilienhäuser schreibt das BGB je nach Beauftragung eine gleich hohe Verpflichtung beider Parteien oder mindestens die hälftige Kostentragung der beauftragenden Partei vor. Eine amtlich festgelegte Provisionshöhe gibt es nicht.",
+      "source": "§§ 656c und 656d BGB",
+      "sourceUrl": "https://www.gesetze-im-internet.de/bgb/__656c.html",
+      "publishedAt": "2020-12",
+      "checkedAt": "2026-07-22",
+      "scope": "Deutschland"
+    }
+  },
+  "market": {
+    "population2024": {
+      "value": 632562,
+      "unit": "Personen",
+      "scope": "Leipzig",
+      "source": "Stadt Leipzig, Amt für Statistik und Wahlen – Einwohner mit Hauptwohnsitz laut Melderegister",
+      "sourceUrl": "https://statistik.leipzig.de/statcity/table.aspx?cat=2&rub=1",
+      "publishedAt": "2026-07",
+      "checkedAt": "2026-07-22",
+      "referenceDate": "2024-12-31"
+    },
+    "population2025": {
+      "value": 633592,
+      "unit": "Personen",
+      "scope": "Leipzig",
+      "source": "Stadt Leipzig, Amt für Statistik und Wahlen – Einwohner mit Hauptwohnsitz laut Melderegister",
+      "sourceUrl": "https://statistik.leipzig.de/statcity/table.aspx?cat=2&rub=1",
+      "publishedAt": "2026-07",
+      "checkedAt": "2026-07-22",
+      "referenceDate": "2025-12-31"
+    },
+    "populationGrowth2025": {
+      "value": 1030,
+      "unit": "Personen",
+      "scope": "Leipzig",
+      "source": "Eigene Differenz aus den Jahresendständen des Leipziger Melderegisters",
+      "sourceUrl": "https://statistik.leipzig.de/statcity/table.aspx?cat=2&rub=1",
+      "publishedAt": "2026-07",
+      "checkedAt": "2026-07-22",
+      "calculation": "633.592 − 632.562",
+      "kind": "derived"
+    },
+    "populationGrowthRate2025": {
+      "value": 0.16,
+      "unit": "%",
+      "scope": "Leipzig",
+      "source": "Eigene Berechnung aus den Jahresendständen des Leipziger Melderegisters",
+      "sourceUrl": "https://statistik.leipzig.de/statcity/table.aspx?cat=2&rub=1",
+      "publishedAt": "2026-07",
+      "checkedAt": "2026-07-22",
+      "calculation": "1.030 ÷ 632.562 × 100, gerundet",
+      "kind": "derived"
+    },
+    "weakestGrowthSince": {
+      "value": 2002,
+      "unit": "Jahr",
+      "scope": "Leipzig",
+      "source": "Eigener Vergleich der jährlichen Differenzen in der amtlichen Melderegister-Zeitreihe",
+      "sourceUrl": "https://statistik.leipzig.de/statcity/table.aspx?cat=2&rub=1",
+      "publishedAt": "2026-07",
+      "checkedAt": "2026-07-22",
+      "calculation": "Vergleich der positiven Jahresveränderungen 2002 bis 2025",
+      "kind": "derived"
+    },
+    "buildingPermits2025": {
+      "value": 2127,
+      "unit": "Wohnungen",
+      "scope": "Leipzig",
+      "source": "Statistisches Landesamt Sachsen über Leipzig-Informationssystem – Baugenehmigungen, Quartalszahlen",
+      "sourceUrl": "https://statistik.leipzig.de/statcity/table.aspx?cat=6&per=q&rub=5",
+      "publishedAt": "2026-06",
+      "checkedAt": "2026-07-22",
+      "referenceDate": "2025",
+      "calculation": "2025 Q1 189 + Q2 220 + Q3 913 + Q4 805",
+      "kind": "derived",
+      "status": "vorläufig"
+    },
+    "buildingCompletions2024": {
+      "value": 2771,
+      "unit": "Wohnungen",
+      "scope": "Leipzig",
+      "source": "Statistisches Landesamt Sachsen über Leipzig-Informationssystem – Baufertigstellungen, Jahreszahlen",
+      "sourceUrl": "https://statistik.leipzig.de/statcity/table.aspx?cat=6&rub=6",
+      "publishedAt": "2025-12",
+      "checkedAt": "2026-07-22",
+      "referenceDate": "2024"
+    }
+  },
+  "unconfirmed": [
+    {
+      "label": "Exakte Bestandsmieten 2025 für alle sieben Ortsteile",
+      "reason": "Die amtliche Analyse 2026 zeigt kleinräumig nur Klassen in Karten. Die letzte offen abrufbare Tabelle mit exakten Ortsteilwerten enthält 2023.",
+      "checkedSources": [
+        "https://www.leipzig.de/fileadmin/mediendatenbank/leipzig-de/Stadt/02.1_Dez1_Allgemeine_Verwaltung/12_Statistik_und_Wahlen/Analysen_zur_Stadtgesellschaft/AzSG_13_Eine_Analyse_der_Mietpreisentwicklung_in_Leipzig.pdf",
+        "https://statistik.leipzig.de/statdist/table.aspx?cat=6&rub=6"
+      ]
+    },
+    {
+      "label": "Ein einheitlicher amtlicher Mietwert für „Gohlis“",
+      "reason": "Die amtliche Gebietsgliederung unterscheidet Gohlis-Süd, Gohlis-Mitte und Gohlis-Nord. Deshalb werden die drei Werte getrennt gezeigt.",
+      "checkedSources": [
+        "https://statistik.leipzig.de/statdist/table.aspx?cat=6&rub=6"
+      ]
+    },
+    {
+      "label": "Aktuelle Kaufpreis-Medianwerte exakt für jeden genannten Ortsteil",
+      "reason": "Der Grundstücksmarktbericht 2026 veröffentlicht den vergleichbaren Wohnungstyp in Tabelle 99 auf Stadtbezirksebene. Eine feinere Zahl wäre nicht aus derselben amtlichen Systematik belegbar.",
+      "checkedSources": [
+        "https://www.leipzig.de/fileadmin/mediendatenbank/leipzig-de/Stadt/02.6_Dez6_Stadtentwicklung_Bau/62_Amt_fuer_Geoinformationen_und_Bodenordnung/Gutachterausschuss/Marktbericht_Leipzig_2026_02.pdf"
+      ]
+    },
+    {
+      "label": "Eine allgemeingültige Maklerprovision",
+      "reason": "Das BGB regelt die Kostenverteilung bei Wohnungen und Einfamilienhäusern, setzt aber keine feste Provisionshöhe fest.",
+      "checkedSources": [
+        "https://www.gesetze-im-internet.de/bgb/__656c.html",
+        "https://www.gesetze-im-internet.de/bgb/__656d.html"
+      ]
+    },
+    {
+      "label": "Ein allgemeingültiger Eigenkapital-Mindestbetrag",
+      "reason": "Finanzierung, Grundschuld, Vertragsgestaltung und Maklervereinbarung sind fallabhängig. Gezeigt wird daher nur eine transparente Nebenkosten-Modellrechnung, keine Finanzierungsempfehlung.",
+      "checkedSources": [
+        "https://www.gesetze-im-internet.de/gnotkg/anlage_1.html",
+        "https://www.revosax.sachsen.de/vorschrift/19800-Saechsisches-Grunderwerbsteuersatzgesetz"
+      ]
+    },
+    {
+      "label": "Baufertigstellungen 2025",
+      "reason": "Die amtliche Jahresreihe enthält zum Prüfdatum als neuesten Wert das Jahr 2024.",
+      "checkedSources": [
+        "https://statistik.leipzig.de/statcity/table.aspx?cat=6&rub=6"
+      ]
+    }
+  ],
+  "updatePlan": [
+    {
+      "source": "Leipzig Open Data API: Einwohner, Mieten, Baugenehmigungen, Baufertigstellungen",
+      "mode": "automatic",
+      "cadence": "monatlich prüfen; nur neue Perioden übernehmen",
+      "reason": "JSON/CSV-Ressourcen mit stabilen amtlichen Kennziffern sind maschinenlesbar. Ableitungen müssen nach dem Import neu berechnet und auf Plausibilität geprüft werden.",
+      "sourceUrl": "https://opendata.leipzig.de/showcase/leipzig-informationssystem"
+    },
+    {
+      "source": "Gutachterausschuss: Grundstücksmarktbericht",
+      "mode": "manual",
+      "cadence": "quartalsweise auf Neuerscheinung prüfen",
+      "reason": "Die relevanten Tabellen stehen im PDF; Segment, Tabellenstruktur und räumliche Ebene können sich ändern.",
+      "sourceUrl": "https://statistik.leipzig.de/statpubl/index.aspx?cat=6&rub=5"
+    },
+    {
+      "source": "Mietspiegel und amtliche Mietpreisanalysen",
+      "mode": "manual",
+      "cadence": "quartalsweise auf neue Veröffentlichung prüfen",
+      "reason": "Karten, Methodik und Bezugszeitpunkte müssen fachlich gelesen werden; Werte aus privaten Angebotsdaten bleiben ausgeschlossen.",
+      "sourceUrl": "https://statistik.leipzig.de/statpubl/index.aspx?cat=1&rub=4"
+    },
+    {
+      "source": "Rechtsquellen: GrEStG-Satz Sachsen, GNotKG, BGB",
+      "mode": "manual",
+      "cadence": "quartalsweise und vor jeder größeren Kampagne prüfen",
+      "reason": "Rechtsänderungen sind selten, aber kostenrelevant; Tarif- und Gesetzesstand müssen gemeinsam validiert werden.",
+      "sourceUrl": "https://www.revosax.sachsen.de/vorschrift/19800-Saechsisches-Grunderwerbsteuersatzgesetz"
+    }
+  ]
+}

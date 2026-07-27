@@ -5,7 +5,13 @@
   "scripts": {
     "dev": "next dev",
     "demo:leads": "node scripts/demo-leads.js",
+    "db:check-content": "node scripts/run-db-sql.js --file db/migrations/20260712_content_inventory.sql --rollback",
+    "db:migrate-content": "node scripts/run-db-sql.js --file db/migrations/20260712_content_inventory.sql",
+    "db:check-growth-lab": "node scripts/run-db-sql.js --file db/migrations/20260716_growth_lab_metadata.sql --rollback",
+    "db:migrate-growth-lab": "node scripts/run-db-sql.js --file db/migrations/20260716_growth_lab_metadata.sql",
+    "db:backfill-content": "node scripts/run-db-sql.js --file db/backfill/20260712_augenblick_reels.sql",
     "build": "next build",
+    "build:verify": "NEXT_DIST_DIR=.next-verify next build",
     "start": "next start",
     "test": "vitest run",
     "lint": "next lint"

@@ -287,9 +287,16 @@ export default function Quiz({ tenantConfig = DEFAULT_TENANT_CONFIG }) {
     selectAndAdvance('wohnung', value, 2)
   }
 
-  /* Step 2 — click option → select + go to step 3 */
+  /* Tenants may skip the capital/financing questions for a pure information
+     request: that data is not needed to send informational material. */
+  const skipsMoneyQuestions = (QUIZ_CONFIG.branching?.skipEquityAndFinancingFor || [])
+    .includes(answers.wohnung)
+  const phoneOptional = (QUIZ_CONFIG.branching?.optionalPhoneFor || [])
+    .includes(answers.wohnung)
+
+  /* Step 2 — click option → select + go to step 3 (or straight to contact) */
   const handleZeitrahmenClick = (value) => {
-    selectAndAdvance('zeitrahmen', value, 3)
+    selectAndAdvance('zeitrahmen', value, skipsMoneyQuestions ? 5 : 3)
   }
 
   /* Step 3 — click option → select + check soft disqualification */
@@ -329,9 +336,13 @@ export default function Quiz({ tenantConfig = DEFAULT_TENANT_CONFIG }) {
     if (!formData.lastName.trim()) errs.lastName = true
     if (!formData.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
       errs.email = true
-    // Phone: must have country code + at least 7 digits
+    // Phone: must have country code + at least 7 digits.
+    // Pure information requests may leave it empty, but a typed number must still be valid.
     const phoneDigits = formData.phone.replace(/\D/g, '')
-    if (!formData.phone.trim() || phoneDigits.length < 7) errs.phone = true
+    const phoneEmpty = !formData.phone.trim()
+    if (phoneOptional ? (!phoneEmpty && phoneDigits.length < 7) : (phoneEmpty || phoneDigits.length < 7)) {
+      errs.phone = true
+    }
     if (!formData.consent) errs.consent = true
     setErrors(errs)
     return Object.keys(errs).length === 0
@@ -630,7 +641,7 @@ export default function Quiz({ tenantConfig = DEFAULT_TENANT_CONFIG }) {
                     <span className="error-text">Bitte gültige E-Mail eingeben</span>
                   </div>
                   <div className="form-group">
-                    <label htmlFor="phone">Telefon *</label>
+                    <label htmlFor="phone">{phoneOptional ? 'Telefon (optional)' : 'Telefon *'}</label>
                     <PhoneInput
                       value={formData.phone}
                       onChange={(val) => setFormData((f) => ({ ...f, phone: val }))}
@@ -685,7 +696,7 @@ export default function Quiz({ tenantConfig = DEFAULT_TENANT_CONFIG }) {
                 </div>
               </form>
               <div className="quiz-nav-compact" style={{ marginTop: 6 }}>
-                <button type="button" className="btn-back-sm" onClick={() => goToStep(underqualified && !answers.finanzierung ? 3 : 4)}>
+                <button type="button" className="btn-back-sm" onClick={() => goToStep(skipsMoneyQuestions ? 2 : (underqualified && !answers.finanzierung ? 3 : 4))}>
                   ← Zurück
                 </button>
               </div>

@@ -1,24 +1,24 @@
 const workflowSteps = [
-  ['01', 'Quiz-Landingpage', 'Budget, Eigenkapital, Immobilientyp und Timing werden abgefragt.'],
-  ['02', 'Lead-Qualifizierung', 'Die Anfrage wird in hot, warm, cold oder not qualified eingeordnet.'],
-  ['03', 'Workflow-Automation', 'n8n schreibt den Lead in Sheet oder CRM und startet den Follow-up-Prozess.'],
-  ['04', 'AI-E-Mail-Entwurf', 'Ein passender Antwortentwurf wird vorbereitet, aber nicht automatisch versendet.'],
-  ['05', 'Manager-Handoff', 'Hot Leads erhalten einen klaren Call-Kontext für Vertrieb oder Callcenter.'],
+  ['01', 'Serielle AI-Reels', 'Aus Objektfotos entsteht regelmäßig bezahlbarer Content für organische Reichweite.'],
+  ['02', 'Messbarer Einstieg', 'Profil-Link, Landingpage und UTM-Daten verbinden jedes Reel mit der Anfrage.'],
+  ['03', 'Quiz & Qualifizierung', 'Budget, Eigenkapital, Timing und Finanzierung ergeben hot, warm, cold oder not qualified.'],
+  ['04', 'Geprüfter E-Mail-Follow-up', 'Das System bereitet die passende Antwort vor; ein Mensch prüft und versendet sie.'],
+  ['05', 'Call-Handoff & Feedback', 'Hot Leads erhalten einen klaren Rückrufkontext, spätere Ergebnisse verbessern die Regeln.'],
 ]
 
 const deliverables = [
+  ['Organic AI-Reel System', 'Wiederholbare Reel-Produktion aus vorhandenem Objektmaterial mit passendem CTA.'],
   ['Custom Quiz Funnel', 'Eine schlanke Landingpage, die Interessenten durch die wichtigsten Kaufkriterien führt.'],
   ['Qualification Rules', 'Regeln für Budget, Eigenkapital, Timing, Finanzierungsstatus und Kaufabsicht.'],
-  ['n8n Workflow', 'Webhook, Validierung, Segmentierung, Sheet/CRM-Write und E-Mail-Draft in einem Ablauf.'],
-  ['CRM-ready Data', 'Saubere Lead-Daten für Google Sheets, HubSpot, Pipedrive oder ein bestehendes CRM.'],
-  ['AI Draft System', 'Follow-up-Mails nach Segment, Projekt und Antworten des Interessenten.'],
-  ['Tracking Setup', 'Slots für GTM, Meta Pixel und Meta CAPI, consent-gated und deploy-sicher.'],
+  ['CRM-ready Data', 'Lead, Consent, Segment, Quelle und nächster Schritt bleiben über eine stabile Lead-ID verbunden.'],
+  ['Human-reviewed E-Mail', 'Follow-up-Entwürfe nach Segment und Antworten des Interessenten, niemals blind versendet.'],
+  ['Source Tracking', 'UTM-Kampagne und Reel-Quelle zeigen, welcher Content welche Anfrage ausgelöst hat.'],
 ]
 
 const packages = [
-  ['Pilot Sprint', '1-2 Wochen', 'Live-Demo, ein Objekt, ein Lead-Workflow, Gmail Drafts und Sheet/CRM Export.'],
-  ['Implementation', '2-4 Wochen', 'Custom Quiz, Segmentlogik, n8n Automationen, Tracking und Vertriebshandoff.'],
-  ['Monthly Ops', 'laufend', 'Monitoring, Prompt-Optimierung, neue Segmente, Reporting und Funnel-Verbesserungen.'],
+  ['Pilot Sprint', 'klar begrenzt', 'Ein Objekt, eine Reel-Serie, ein Quiz und ein nachvollziehbarer E-Mail-/Call-Workflow.'],
+  ['Implementation', 'nach dem Pilot', 'Eigene Qualifikationsregeln, Lead-Inbox, Tracking und Vertriebshandoff.'],
+  ['Monthly Ops', 'laufend', 'Neue Reels, Funnel-Betrieb, Lead-Feedback und verständliches Reporting.'],
 ]
 
 const contactEmail = process.env.NEXT_PUBLIC_CONTACT_EMAIL || 'me@valquilty.com'
@@ -26,11 +26,11 @@ const calendlyUrl = process.env.NEXT_PUBLIC_CALENDLY_URL || ''
 const linkedinUrl =
   process.env.NEXT_PUBLIC_LINKEDIN_URL ||
   'https://www.linkedin.com/in/valentyn-havrychenko/'
-const emailSubject = 'Demo-Anfrage: Lead-to-Call System für Immobilien'
+const emailSubject = 'Demo-Anfrage: Reel-to-Lead System für Immobilien'
 const emailBody = [
   'Hi,',
   '',
-  'ich habe die NovaHaus Lead-to-Call Demo gesehen und würde gern kurz besprechen, wie so ein Workflow für unsere Immobilien-Leads aussehen könnte.',
+  'ich habe die NovaHaus Reel-to-Lead Demo gesehen und würde gern kurz besprechen, wie organische AI-Reels und der Lead-Workflow für unsere Objekte aussehen könnten.',
   '',
   'Firma:',
   'Lead-Quellen:',
@@ -44,9 +44,9 @@ const primaryContactUrl = calendlyUrl || mailtoUrl
 const primaryContactLabel = calendlyUrl ? 'Demo-Call buchen' : 'Demo-Anfrage senden'
 
 export const metadata = {
-  title: 'Lead-to-Call System für Immobilienunternehmen | NovaHaus Demo',
+  title: 'Reel-to-Lead System für Immobilienunternehmen | NovaHaus Demo',
   description:
-    'B2B-Demo für Immobilienfirmen: Quiz-Landingpage, Lead-Qualifizierung, n8n Workflow, AI-E-Mail-Entwurf und Manager-Handoff.',
+    'B2B-Demo für Immobilienfirmen: organische AI-Reels, Quiz-Landingpage, Lead-Qualifizierung, geprüfter E-Mail-Follow-up und Call-Handoff.',
 }
 
 export default function SystemPage() {
@@ -69,10 +69,10 @@ export default function SystemPage() {
 
         <div className="system-nav container">
           <a href="/system" className="system-brand">
-            Lead-to-Call System
+            Reel-to-Lead System
           </a>
           <div className="system-nav-links">
-            <a href="/">Live Demo</a>
+            <a href="/demo">Live Demo</a>
             <a href="/quiz">Quiz testen</a>
             <a href="#kontakt">Kontakt</a>
           </div>
@@ -81,37 +81,37 @@ export default function SystemPage() {
         <div className="container system-hero-inner">
           <div className="system-hero-copy">
             <p className="system-eyebrow">Für Immobilienfirmen, Makler und Projektentwickler</p>
-            <h1>Mehr aus Immobilien-Leads holen, bevor sie kalt werden.</h1>
+            <h1>Aus Objektfotos werden Reels. Aus Aufmerksamkeit werden qualifizierte Anfragen.</h1>
             <p>
-              Ein schneller Lead-to-Call Funnel: Quiz-Landingpage, Qualifizierung,
-              n8n-Automation, Sheet/CRM Sync, AI-E-Mail-Entwurf und klarer
-              Handoff an Vertrieb oder Callcenter.
+              Bezahlbar produzierbare AI-Reels bringen kontinuierlich organischen
+              Traffic in einen messbaren Funnel. Quiz, Qualifizierung und geprüfte
+              E-Mails führen passende Interessenten zum richtigen nächsten Schritt.
             </p>
             <div className="system-hero-actions">
-              <a href="/" className="system-btn system-btn-primary">
-                Live-Demo ansehen
+              <a href="/demo" className="system-btn system-btn-primary">
+                System-Demo ansehen
               </a>
-              <a href="/quiz" className="system-btn system-btn-secondary">
-                Quiz testen
+              <a href="/quiz?demo=hot" className="system-btn system-btn-secondary">
+                Hot-Lead testen
               </a>
             </div>
           </div>
 
           <div className="system-hero-panel" aria-label="Systemkennzahlen">
             <div>
-              <span>Antwortfenster</span>
-              <strong>5-15 Min.</strong>
-              <p>Hot Leads werden sofort für den Rückruf markiert.</p>
+              <span>Content-Motor</span>
+              <strong>AI-Reels in Serie</strong>
+              <p>Vorhandene Objektfotos werden zum wiederholbaren organischen Eingang.</p>
+            </div>
+            <div>
+              <span>Attribution</span>
+              <strong>Reel bis Lead</strong>
+              <p>UTM-Daten verbinden Content, Quiz und Anfrage.</p>
             </div>
             <div>
               <span>Lead Routing</span>
-              <strong>Hot / Warm / Cold</strong>
-              <p>Jede Anfrage bekommt den nächsten sinnvollen Schritt.</p>
-            </div>
-            <div>
-              <span>Sicherer AI-Modus</span>
-              <strong>Draft-only</strong>
-              <p>AI bereitet Antworten vor, der Mensch gibt sie frei.</p>
+              <strong>E-Mail oder Call</strong>
+              <p>Der nächste Schritt folgt dem Segment, nicht einem pauschalen Autopilot.</p>
             </div>
           </div>
         </div>
@@ -121,12 +121,12 @@ export default function SystemPage() {
         <div className="container system-split">
           <div>
             <p className="system-kicker">Das Problem</p>
-            <h2>Viele Immobilien-Leads verlieren ihren Wert in den ersten Minuten.</h2>
+            <h2>Ohne regelmäßigen Content entsteht weder Aufmerksamkeit noch ein messbarer Lead-Prozess.</h2>
           </div>
           <div className="system-problem-list">
-            <p>Interessenten füllen ein Formular aus, aber niemand reagiert schnell genug.</p>
-            <p>Der Vertrieb weiß nicht sofort, ob Budget, Eigenkapital und Timing passen.</p>
-            <p>Follow-ups werden manuell geschrieben und klingen oft nicht persönlich.</p>
+            <p>Objektfotos liegen vor, aber Social Accounts werden unregelmäßig bespielt.</p>
+            <p>Reichweite bleibt vom einzelnen Post abhängig und ist nicht mit Anfragen verbunden.</p>
+            <p>Bei eingehenden Leads fehlen Qualifizierung, schneller Follow-up und Rückmeldung zum Ergebnis.</p>
           </div>
         </div>
       </section>
@@ -135,7 +135,7 @@ export default function SystemPage() {
         <div className="container">
           <div className="system-section-head">
             <p className="system-kicker">Workflow</p>
-            <h2>Vom Klick zur qualifizierten Anfrage mit vorbereitetem Follow-up.</h2>
+            <h2>Vom Objektfoto bis zur qualifizierten Anfrage und zurück zum messbaren Ergebnis.</h2>
           </div>
           <div className="system-workflow">
             {workflowSteps.map(([number, title, text]) => (
@@ -153,7 +153,7 @@ export default function SystemPage() {
         <div className="container">
           <div className="system-section-head">
             <p className="system-kicker">Was geliefert wird</p>
-            <h2>Ein verkaufbarer Prototyp, der wie ein echtes Sales-Ops-System arbeitet.</h2>
+            <h2>Ein begrenzter Pilot, der Content und Lead-Verarbeitung als eine Kette beweist.</h2>
           </div>
           <div className="system-grid">
             {deliverables.map(([title, text]) => (
@@ -170,18 +170,18 @@ export default function SystemPage() {
         <div className="container system-demo-inner">
           <div>
             <p className="system-kicker">Live Demo</p>
-            <h2>NovaHaus zeigt den kompletten Ablauf an einem Immobilienbeispiel.</h2>
+            <h2>NovaHaus zeigt den Ablauf vom organischen Einstieg bis zu E-Mail oder Rückruf.</h2>
             <p>
-              Die Demo ist bewusst einfach gehalten: ein Objekt, ein Quiz, ein Lead-Webhook,
-              Google Sheets, Gmail Drafts und ein AI-Provider-Switcher für E-Mail-Entwürfe.
+              Die sichere Demo verwendet Testdaten: ein Objekt, eine Reel-Quelle, ein Quiz,
+              eine stabile Lead-ID, Qualifizierung und einen vorbereiteten nächsten Schritt.
             </p>
           </div>
           <div className="system-demo-actions">
-            <a href="/" className="system-btn system-btn-primary">
-              Website ansehen
+            <a href="/demo" className="system-btn system-btn-primary">
+              Demo-Szenarien ansehen
             </a>
-            <a href="/quiz" className="system-btn system-btn-light">
-              Lead erzeugen
+            <a href="/quiz?demo=hot" className="system-btn system-btn-light">
+              Hot-Lead durchspielen
             </a>
           </div>
         </div>
@@ -203,8 +203,8 @@ export default function SystemPage() {
             ))}
           </div>
           <p className="system-note">
-            Positionierung für Kunden: kein Ersatz für Vertrieb, sondern ein schnelleres
-            Qualifizierungs- und Follow-up-System für bestehende Leadquellen.
+            Kein Ersatz für Makler oder Vertrieb: Die organische Content-Produktion schafft
+            neue Einstiege, das System macht die daraus entstehenden Anfragen bearbeitbar.
           </p>
         </div>
       </section>
@@ -215,8 +215,8 @@ export default function SystemPage() {
             <p className="system-kicker">Kontakt</p>
             <h2>Für eine Immobilienfirma wird daraus ein eigener Funnel mit eigenem Objekt, eigener Logik und eigenem CRM.</h2>
             <p>
-              Im ersten Call klären wir, welche Leadquellen, Qualifikationsregeln,
-              CRM-Tools und Follow-up-Prozesse für einen Pilot sinnvoll sind.
+              Im ersten Call klären wir Objektmaterial, Account, CTA, Qualifikationsregeln,
+              Empfänger und Feedback-Prozess für einen klar begrenzten Pilot.
             </p>
             <div className="system-final-actions">
               <a
@@ -227,7 +227,7 @@ export default function SystemPage() {
               >
                 {primaryContactLabel}
               </a>
-              <a href="/" className="system-btn system-btn-secondary">
+              <a href="/demo" className="system-btn system-btn-secondary">
                 Live Demo teilen
               </a>
               {linkedinUrl && (

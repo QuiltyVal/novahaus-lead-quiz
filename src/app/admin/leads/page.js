@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import AdminNav from '@/components/AdminNav'
 import { listLeads } from '@/lib/leadStore'
 import { TENANT_CONFIGS } from '@/lib/tenantConfig'
 
@@ -37,8 +38,7 @@ function DatabaseSetupState() {
       <h2>Datenbank noch nicht verbunden</h2>
       <p>
         Die Lead Inbox ist vorbereitet, aber <code>DATABASE_URL</code> ist noch nicht in
-        der Umgebung gesetzt. Bis dahin läuft der bestehende n8n/Google-Sheets
-        Workflow weiter.
+        der Umgebung gesetzt.
       </p>
       <div className="admin-code-block">
         <span>1. Postgres-Datenbank anlegen</span>
@@ -95,6 +95,7 @@ export default async function LeadsAdminPage({ searchParams }) {
           Zur Website
         </a>
       </header>
+      <AdminNav active="leads" />
 
       <section className="admin-kpis" aria-label="Lead overview">
         <div className="admin-kpi">

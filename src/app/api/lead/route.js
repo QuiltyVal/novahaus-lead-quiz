@@ -6,7 +6,12 @@ import nodemailer from 'nodemailer'
 import { DEFAULT_TENANT_CONFIG, getTenantConfig, optionMap } from '@/lib/tenantConfig'
 import { calculateLeadScore } from '@/lib/leadScoring'
 import { getSalesQualification } from '@/lib/leadQualification'
-import { findRecentLeadByEmailTenant, saveLeadRecord } from '@/lib/leadStore'
+import { buildHotLeadHandoffContent, resolveHotLeadNotificationEmail } from '@/lib/leadHandoff'
+import { findRecentLeadByEmailTenant, recordLeadEvent, saveLeadRecord } from '@/lib/leadStore'
+import { linkLeadToPropertiesByExternalKeys } from '@/lib/contentStore'
+import { propertyKeysForQuizSelection } from '@/lib/contentValidation'
+import { isValidLeadPhone } from '@/lib/leadValidation'
+import { buildOpenRouterEmailResponseFormat } from '@/lib/openRouterEmail'
 
 /* ============================================
    CONFIG — from env variables
@@ -30,6 +35,11 @@ const LEAD_EMAIL_REPLY_TO = process.env.LEAD_EMAIL_REPLY_TO || ''
 const LEAD_EMAIL_BCC = process.env.LEAD_EMAIL_BCC || ''
 const RESEND_API_KEY = process.env.RESEND_API_KEY || ''
 const DEMO_LEAD_TARGET_EMAIL = process.env.DEMO_LEAD_TARGET_EMAIL || ''
+const HOT_LEAD_NOTIFY_EMAIL = resolveHotLeadNotificationEmail({
+  hotLeadNotifyEmail: process.env.HOT_LEAD_NOTIFY_EMAIL,
+  notifyEmail: NOTIFY_EMAIL,
+  leadEmailBcc: LEAD_EMAIL_BCC,
+})
 
 // n8n Lead Collector (primary destination for the AI Lead-to-Call MVP)
 const N8N_LEAD_WEBHOOK_URL = process.env.N8N_LEAD_WEBHOOK_URL || ''
@@ -191,10 +201,25 @@ function validateLeadInput(body) {
 
   if (!normalized.firstName) errors.firstName = 'required'
   if (!EMAIL_PATTERN.test(normalized.email)) errors.email = 'invalid'
+  const phoneOptional = (tenantConfig.quiz.branching?.optionalPhoneFor || [])
+    .includes(normalized.wohnung)
+  if (!phoneOptional || normalized.phone) {
+    if (!isValidLeadPhone(normalized.phone)) errors.phone = 'invalid'
+  }
   if (!validWohnung.has(normalized.wohnung)) errors.wohnung = 'invalid'
   if (!validZeitrahmen.has(normalized.zeitrahmen)) errors.zeitrahmen = 'invalid'
-  if (!validEigenkapital.has(normalized.eigenkapital)) errors.eigenkapital = 'invalid'
-  if (!validFinanzierung.has(normalized.finanzierung)) errors.finanzierung = 'invalid'
+
+  /* Tenants may declare intents that are a pure information request. Those do
+     not ask for capital or financing, so the fields must be absent, not valid. */
+  const skipsMoneyQuestions = (tenantConfig.quiz.branching?.skipEquityAndFinancingFor || [])
+    .includes(normalized.wohnung)
+  if (skipsMoneyQuestions) {
+    if (normalized.eigenkapital) errors.eigenkapital = 'invalid'
+    if (normalized.finanzierung) errors.finanzierung = 'invalid'
+  } else {
+    if (!validEigenkapital.has(normalized.eigenkapital)) errors.eigenkapital = 'invalid'
+    if (!validFinanzierung.has(normalized.finanzierung)) errors.finanzierung = 'invalid'
+  }
   if (!normalized.consent) errors.consent = 'required'
 
   normalized.tenant_id = tenantConfig.tenantId
@@ -531,7 +556,8 @@ async function generateOpenRouterEmailDraft(leadRecord) {
       ],
       temperature: 0.35,
       max_tokens: 450,
-      response_format: { type: 'json_object' },
+      response_format: buildOpenRouterEmailResponseFormat(),
+      provider: { require_parameters: true },
     }),
   }).finally(() => clearTimeout(timeout))
 
@@ -1011,6 +1037,42 @@ async function sendCustomerFollowUpEmail(leadRecord) {
   }
 }
 
+async function sendHotLeadHandoffEmail(leadRecord) {
+  if (leadRecord.segment !== 'hot' || !leadRecord.handoff_required) {
+    return { sent: false, reason: 'handoff_not_required' }
+  }
+
+  if (leadRecord.duplicate) {
+    return { sent: false, reason: 'duplicate_recent_lead' }
+  }
+
+  if (!HOT_LEAD_NOTIFY_EMAIL) {
+    return { sent: false, reason: 'recipient_not_configured' }
+  }
+
+  const provider = resolveLeadEmailProvider()
+  if (!['resend', 'smtp'].includes(provider)) {
+    return { sent: false, reason: 'provider_not_configured' }
+  }
+
+  const content = buildHotLeadHandoffContent(leadRecord)
+  const message = {
+    to: HOT_LEAD_NOTIFY_EMAIL,
+    subject: content.subject,
+    text: content.body,
+    html: `<main style="font-family: Arial, Helvetica, sans-serif; color: #18212b; line-height: 1.55; max-width: 640px;">${textToHtml(content.body)}</main>`,
+  }
+  const messageId = provider === 'resend'
+    ? await sendViaResend(message)
+    : await sendViaSmtp(message)
+
+  return {
+    sent: true,
+    provider,
+    message_id: messageId,
+  }
+}
+
 /* ============================================
    POST /api/lead
    ============================================ */
@@ -1036,7 +1098,9 @@ async function processLead(body, requestMeta = {}) {
     : markedLeadRecord
   let delivery = 'none'
   let databaseSaved = false
+  let objectLinks = { linked: [], missing: [] }
   let customerEmail = { sent: false, reason: 'not_attempted' }
+  let hotLeadHandoff = { sent: false, reason: 'not_attempted' }
 
   try {
     const databaseResult = await saveLeadRecord(leadRecord)
@@ -1051,6 +1115,37 @@ async function processLead(body, requestMeta = {}) {
     console.error(`Database lead save error: lead_id=${leadRecord.lead_id} segment=${leadRecord.segment} message=${databaseErr.message}`)
   }
 
+  if (databaseSaved) {
+    const propertyKeys = propertyKeysForQuizSelection(
+      getTenantConfig(leadRecord.tenant_id),
+      leadRecord.wohnung
+    )
+
+    if (propertyKeys.length) {
+      try {
+        objectLinks = await linkLeadToPropertiesByExternalKeys({
+          leadId: leadRecord.lead_id,
+          tenantId: leadRecord.tenant_id,
+          externalKeys: propertyKeys,
+        })
+
+        if (objectLinks.missing.length) {
+          await recordLeadEvent({
+            leadId: leadRecord.lead_id,
+            tenantId: leadRecord.tenant_id,
+            type: 'object_resolution_failed',
+            payload: {
+              selected_value: leadRecord.wohnung,
+              missing_external_keys: objectLinks.missing,
+            },
+          })
+        }
+      } catch (objectLinkErr) {
+        console.error(`Lead object link error: lead_id=${leadRecord.lead_id} message=${objectLinkErr.message}`)
+      }
+    }
+  }
+
   try {
     customerEmail = await sendCustomerFollowUpEmail(leadRecord)
     if (customerEmail.sent) {
@@ -1061,6 +1156,51 @@ async function processLead(body, requestMeta = {}) {
   } catch (customerEmailErr) {
     customerEmail = { sent: false, reason: 'send_error', error: customerEmailErr.message }
     console.error(`Customer follow-up email error: lead_id=${leadRecord.lead_id} segment=${leadRecord.segment} message=${customerEmailErr.message}`)
+  }
+
+  if (databaseSaved && customerEmail.sent) {
+    try {
+      await recordLeadEvent({
+        leadId: leadRecord.lead_id,
+        tenantId: leadRecord.tenant_id,
+        type: 'direct_email_sent',
+        payload: {
+          provider: customerEmail.provider,
+          message_id: customerEmail.message_id,
+          redirected_demo: Boolean(customerEmail.redirected),
+        },
+      })
+    } catch (eventErr) {
+      console.error(`Direct email event error: lead_id=${leadRecord.lead_id} message=${eventErr.message}`)
+    }
+  }
+
+  try {
+    hotLeadHandoff = await sendHotLeadHandoffEmail(leadRecord)
+    if (hotLeadHandoff.sent) {
+      logLead('Hot lead handoff email sent', leadRecord, `provider=${hotLeadHandoff.provider}`)
+    } else {
+      logLead('Hot lead handoff email skipped', leadRecord, `reason=${hotLeadHandoff.reason}`)
+    }
+  } catch (handoffErr) {
+    hotLeadHandoff = { sent: false, reason: 'send_error', error: handoffErr.message }
+    console.error(`Hot lead handoff email error: lead_id=${leadRecord.lead_id} message=${handoffErr.message}`)
+  }
+
+  if (databaseSaved && hotLeadHandoff.sent) {
+    try {
+      await recordLeadEvent({
+        leadId: leadRecord.lead_id,
+        tenantId: leadRecord.tenant_id,
+        type: 'hot_handoff_notified',
+        payload: {
+          provider: hotLeadHandoff.provider,
+          message_id: hotLeadHandoff.message_id,
+        },
+      })
+    } catch (eventErr) {
+      console.error(`Hot handoff event error: lead_id=${leadRecord.lead_id} message=${eventErr.message}`)
+    }
   }
 
   try {
@@ -1157,6 +1297,8 @@ async function processLead(body, requestMeta = {}) {
     next_action: leadRecord.next_action,
     next_best_action: leadRecord.next_best_action,
     customer_email: customerEmail,
+    hot_lead_handoff: hotLeadHandoff,
+    object_ids: objectLinks.linked.map((property) => property.id),
     duplicate: Boolean(leadRecord.duplicate),
   }
 }
