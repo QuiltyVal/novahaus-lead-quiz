@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import AdminNav from '@/components/AdminNav'
+import DeleteLeadForm from '@/components/admin/DeleteLeadForm'
 import { getLeadDetail } from '@/lib/leadStore'
 
 export const dynamic = 'force-dynamic'
@@ -101,6 +102,7 @@ export default async function LeadDetailPage({ params, searchParams }) {
           <Link className="admin-link-button" href="/">
             Zur Website
           </Link>
+          <DeleteLeadForm leadId={lead.lead_id} />
         </div>
       </header>
       <AdminNav active="leads" />

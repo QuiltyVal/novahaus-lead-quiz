@@ -255,6 +255,31 @@ export async function saveLeadRecord(leadRecord) {
   return { saved: true, lead_id: leadRecord.lead_id }
 }
 
+export async function deleteLeadRecord(leadId) {
+  if (!isDatabaseConfigured()) {
+    return { deleted: false, reason: 'database_not_configured' }
+  }
+
+  if (!leadId) {
+    return { deleted: false, reason: 'missing_input' }
+  }
+
+  const result = await query(
+    `
+      DELETE FROM leads
+      WHERE lead_id = $1
+      RETURNING lead_id
+    `,
+    [leadId]
+  )
+
+  if (result.rows.length === 0) {
+    return { deleted: false, reason: 'not_found' }
+  }
+
+  return { deleted: true, lead_id: result.rows[0].lead_id }
+}
+
 export async function recordLeadEvent({ leadId, tenantId, type, payload = {} }) {
   if (!isDatabaseConfigured()) {
     return { saved: false, reason: 'database_not_configured' }

@@ -3506,6 +3506,10 @@ a {
   cursor: not-allowed;
 }
 
+.admin-delete-button {
+  background: #9b2521;
+}
+
 .admin-small-link {
   color: #2a6784;
   font-weight: 800;
