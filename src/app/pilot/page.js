@@ -16,7 +16,7 @@ const included = [
   ['Interessenten-Quiz', 'Budget, Eigenkapital, Finanzierung und Zeitrahmen werden vor dem ersten Gespräch erfragt.'],
   ['Qualifizierung', 'Jede Anfrage wird als hot, warm, cold oder not qualified eingeordnet — nach Regeln, die wir gemeinsam festlegen.'],
   ['Geprüfter Antwortentwurf', 'Das System bereitet die passende Antwort vor. Ein Mensch prüft sie und versendet sie. Nie automatisch.'],
-  ['Benachrichtigung', 'Neue qualifizierte Anfragen erreichen Sie sofort per E-Mail oder Telegram.'],
+  ['Benachrichtigung', 'Neue qualifizierte Anfragen erreichen Sie per E-Mail. Antwortet ein Interessent später, werden Sie erneut benachrichtigt.'],
   ['Objekt-Attribution', 'Sie sehen, welches Objekt und welcher Beitrag die Anfrage ausgelöst hat.'],
   ['Abschlussbericht', 'Reichweite, Klicks, begonnene und abgeschlossene Quiz, qualifizierte Anfragen, Reaktionszeit.'],
 ]
