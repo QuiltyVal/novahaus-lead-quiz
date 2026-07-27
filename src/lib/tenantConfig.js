@@ -208,7 +208,9 @@ export const TENANT_CONFIGS = {
     workflow: {
       segments: {
         not_qualified: { segment: 'not_qualified', status: 'nurture', priority: 'P4', nextAction: 'send_written_answer', assignedTo: 'ai_agent', followupMinutes: 60 * 24, handoffRequired: false, handoffReason: '', qualificationReason: 'unclear_fit' },
-        hot: { segment: 'hot', status: 'ai_follow_up', priority: 'P1', nextAction: 'send_pilot_scope_and_invoice_details', assignedTo: 'ai_agent', followupMinutes: 60, handoffRequired: false, handoffReason: '', qualificationReason: 'object_flow_lead_volume_and_owner_in_place' },
+        // A qualified agency enquiry is worth a dedicated alert, not just a BCC
+        // copy of the confirmation mail the sender receives.
+        hot: { segment: 'hot', status: 'ai_follow_up', priority: 'P1', nextAction: 'send_pilot_scope_and_invoice_details', assignedTo: 'ai_agent', followupMinutes: 60, handoffRequired: true, handoffReason: 'qualified_agency_enquiry', qualificationReason: 'object_flow_lead_volume_and_owner_in_place' },
         warm: { segment: 'warm', status: 'ai_follow_up', priority: 'P2', nextAction: 'send_pilot_scope_and_one_clarifying_question', assignedTo: 'ai_agent', followupMinutes: 120, handoffRequired: false, handoffReason: '', qualificationReason: 'fits_but_timing_or_ownership_unclear' },
         cold: { segment: 'cold', status: 'nurture', priority: 'P3', nextAction: 'send_pilot_overview', assignedTo: 'nurture_agent', followupMinutes: 60 * 24, handoffRequired: false, handoffReason: '', qualificationReason: 'early_interest' },
       },
