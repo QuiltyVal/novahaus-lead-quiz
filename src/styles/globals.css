@@ -3819,3 +3819,17 @@ a {
     content: none;
   }
 }
+
+/* The hero eyebrow names what is being sold, so it carries more weight
+   than the section kickers it shares a base style with. */
+.system-hero .system-eyebrow {
+  font-size: 17px;
+  letter-spacing: 0.06em;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 700px) {
+  .system-hero .system-eyebrow {
+    font-size: 15px;
+  }
+}
