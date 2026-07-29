@@ -3781,3 +3781,41 @@ a {
 .admin-small-link.active {
   background: rgba(190, 74, 116, 0.12);
 }
+
+/* Four requirements read as one row, not three plus a stranded fourth. */
+.system-grid-four {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+/* The delivery cards are a sequence, so they carry a connector between them. */
+.system-flow .system-card {
+  position: relative;
+}
+
+.system-flow .system-card::after {
+  content: '→';
+  position: absolute;
+  top: 50%;
+  right: -15px;
+  transform: translateY(-50%);
+  color: var(--accent, #be4a74);
+  font-size: 18px;
+  line-height: 1;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.system-flow .system-card:nth-child(3n)::after,
+.system-flow .system-card:last-child::after {
+  content: none;
+}
+
+@media (max-width: 900px) {
+  .system-grid-four {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .system-flow .system-card::after {
+    content: none;
+  }
+}

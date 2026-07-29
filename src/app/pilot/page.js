@@ -37,7 +37,7 @@ const notPromised = [
 
 const steps = [
   ['01', 'Pilot-Check', 'Fünf kurze Fragen zu Objektbestand, Anfragen und Zuständigkeiten. Zwei Minuten, schriftlich.'],
-  ['02', 'Umfang und Angebot', 'Sie erhalten den konkreten Pilot-Umfang für Ihr Objekt schriftlich — kein Verkaufstermin nötig.'],
+  ['02', 'Umfang und Angebot', 'Sie erhalten den konkreten Pilot-Umfang für Ihr Objekt schriftlich, bevor Sie sich entscheiden.'],
   ['03', 'Material und Freigaben', 'Sie liefern Objektfotos und benennen die freigebende Person.'],
   ['04', 'Produktion und Freigabe', 'Wir produzieren, Sie geben frei. Erst danach wird veröffentlicht.'],
   ['05', 'Auswertung', 'Nach 30 Tagen erhalten Sie den vollständigen Bericht mit allen Kennzahlen.'],
@@ -46,7 +46,7 @@ const steps = [
 export const metadata = {
   title: 'Objekt-Pilot — ein Objekt, ein messbarer Anfrageweg | NovaHaus',
   description:
-    'Aus vorhandenen Objektfotos entsteht in 30 Tagen ein messbarer Weg vom Reel bis zur qualifizierten Anfrage. Fester Preis, kein CRM-Wechsel, kein Verkaufstermin.',
+    'Aus vorhandenen Objektfotos entsteht in 30 Tagen ein messbarer Weg vom Reel bis zur qualifizierten Anfrage. Fester Preis, kein CRM-Wechsel.',
 }
 
 export default function PilotPage() {
@@ -80,7 +80,7 @@ export default function PilotPage() {
 
         <div className="container system-hero-inner">
           <div className="system-hero-copy">
-            <p className="system-eyebrow">Für Immobilienunternehmen in Leipzig und Mitteldeutschland</p>
+            <p className="system-eyebrow">Leads für Immobilienunternehmen — Leipzig und Mitteldeutschland</p>
             <h1>Ein Objekt. Ein messbarer Weg bis zur qualifizierten Anfrage.</h1>
             <p>
               Aus Ihren vorhandenen Objektfotos entsteht eine Reel-Serie, ein
@@ -107,7 +107,7 @@ export default function PilotPage() {
             <div>
               <span>Preis</span>
               <strong>{PILOT_PRICE}</strong>
-              <p>Fester Betrag. Keine laufende Bindung.</p>
+              <p>Fester Betrag. Ohne Werbebudget und Videoproduktion.</p>
             </div>
             <div>
               <span>Aufwand für Sie</span>
@@ -150,7 +150,7 @@ export default function PilotPage() {
             <p className="system-kicker">Was enthalten ist</p>
             <h2>Der vollständige Weg vom Objektfoto bis zur beantworteten Anfrage.</h2>
           </div>
-          <div className="system-grid">
+          <div className="system-grid system-flow">
             {included.map(([title, text]) => (
               <article className="system-card" key={title}>
                 <h3>{title}</h3>
@@ -180,12 +180,12 @@ export default function PilotPage() {
       </section>
 
       <section className="system-section system-section-muted">
-        <div className="container system-split">
-          <div>
+        <div className="container">
+          <div className="system-section-head">
             <p className="system-kicker">Was wir von Ihnen brauchen</p>
             <h2>Vier Dinge. Mehr nicht.</h2>
           </div>
-          <div className="system-grid">
+          <div className="system-grid system-grid-four">
             {required.map(([title, text]) => (
               <article className="system-card" key={title}>
                 <h3>{title}</h3>
@@ -254,11 +254,13 @@ export default function PilotPage() {
             </article>
             <article className="system-package">
               <span>Nicht enthalten</span>
-              <h3>Werbebudget</h3>
+              <h3>Werbebudget und Videoproduktion</h3>
               <p>
-                Wenn zusätzlich Anzeigen laufen sollen, läuft das Budget über Ihr
-                eigenes Werbekonto. Wir geben kein Geld für Sie aus und rechnen
-                keine fremden Ausgaben ab.
+                Organische Reichweite ist im Pilot enthalten. Wer zusätzlich
+                bezahlt sichtbar sein will, zahlt das Werbebudget selbst — über
+                das eigene Werbekonto, damit der Spend jederzeit einsehbar
+                bleibt. Die Kosten der Videoproduktion werden pro Objekt
+                separat ausgewiesen.
               </p>
             </article>
             <article className="system-package">
@@ -279,8 +281,8 @@ export default function PilotPage() {
           </div>
 
           <p className="system-kicker" style={{ marginTop: '1.5rem' }}>
-            Kein Verkaufstermin erforderlich. Einrichtung und Rückfragen laufen
-            schriftlich. Antwort innerhalb eines Werktages.
+            Einrichtung und Rückfragen laufen schriftlich. Antwort innerhalb
+            eines Werktages.
           </p>
         </div>
       </section>
