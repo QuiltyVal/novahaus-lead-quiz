@@ -3510,6 +3510,30 @@ a {
   background: #9b2521;
 }
 
+.admin-token-action {
+  align-items: end;
+}
+
+.admin-token-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  border: 1px solid #9bd2b0;
+  border-radius: 8px;
+  background: #ecf8f0;
+  padding: 12px;
+}
+
+.admin-token-result code {
+  align-self: center;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.admin-token-table {
+  min-width: 680px;
+}
+
 .admin-small-link {
   color: #2a6784;
   font-weight: 800;
@@ -3672,6 +3696,14 @@ a {
   }
 
   .admin-form-actions .admin-primary-button {
+    width: 100%;
+  }
+
+  .admin-token-result {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-token-result .admin-primary-button {
     width: 100%;
   }
 

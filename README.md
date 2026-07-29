@@ -284,6 +284,27 @@ Publication remains manual. For a new Growth-Lab Reel, preregister class/hypothe
 
 One database serves all clients. New content and object tables use the existing `tenant_id` as the stable client boundary. Composite foreign keys prevent a Reel or lead from being linked to an object owned by another client.
 
+## Customer Data Room
+
+`/kunde/{token}` is a passwordless, tenant-scoped upload area for object data and
+photos. Operators create and revoke links under `/admin/clients`; only a SHA-256
+token hash and a short display prefix are stored in Postgres.
+
+Apply the additive Data Room migration before enabling links:
+
+```bash
+npm run db:check-data-room -- --env /secure/path/production.env
+npm run db:migrate-data-room -- --env /secure/path/production.env
+```
+
+Set `BLOB_READ_WRITE_TOKEN` in the runtime environment and make
+`DATA_ROOM_BLOB_ACCESS` match the connected Vercel Blob store (`public` or
+`private`). Files are uploaded directly from the browser using a short-lived,
+server-constrained Blob token, then checked server-side for MIME type, size, and
+JPEG/PNG/WebP signature before they become available in `/admin/objects/{id}`.
+The confirmation checkbox is mandatory; its exact text, version, purpose,
+identity, and timestamp are stored separately from the current object status.
+
 ## n8n Workflow
 
 The workflow files and setup notes are in:

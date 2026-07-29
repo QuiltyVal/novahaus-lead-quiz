@@ -1,0 +1,397 @@
+.page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(190, 74, 116, 0.12), transparent 34rem),
+    #f6f4ef;
+  color: #1f2933;
+  padding: 24px clamp(16px, 4vw, 40px) 64px;
+}
+
+.header,
+.intro,
+.form {
+  width: min(100%, 860px);
+  margin-inline: auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid #ded8cd;
+  padding-bottom: 18px;
+}
+
+.brand {
+  color: #18232d;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.client {
+  color: #687480;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.intro {
+  padding: 56px 0 30px;
+}
+
+.eyebrow {
+  color: #be4a74;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.intro h1 {
+  color: #18232d;
+  font-size: clamp(34px, 7vw, 54px);
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+  margin: 0;
+  max-width: 700px;
+}
+
+.intro > p:last-child {
+  color: #5f6a75;
+  font-size: 18px;
+  line-height: 1.55;
+  margin: 22px 0 0;
+  max-width: 720px;
+}
+
+.form {
+  display: grid;
+  gap: 18px;
+}
+
+.card {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 16px;
+  border: 1px solid #ded8cd;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 14px 40px rgba(24, 35, 45, 0.05);
+  padding: 24px;
+}
+
+.step {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #18232d;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.cardContent {
+  min-width: 0;
+}
+
+.cardContent h2 {
+  color: #18232d;
+  font-size: 23px;
+  line-height: 1.2;
+  margin: 4px 0 20px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.field {
+  display: grid;
+  gap: 7px;
+  color: #3a4652;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  border: 1px solid #cfc8bd;
+  border-radius: 10px;
+  background: #fff;
+  color: #18232d;
+  font: inherit;
+  font-weight: 400;
+  line-height: 1.45;
+  padding: 13px 14px;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: #2a6784;
+  box-shadow: 0 0 0 3px rgba(42, 103, 132, 0.12);
+  outline: none;
+}
+
+.field textarea {
+  min-height: 128px;
+  resize: vertical;
+}
+
+.usageGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.usageOption {
+  display: grid;
+  gap: 4px;
+  border: 1px solid #ded8cd;
+  border-radius: 12px;
+  cursor: pointer;
+  padding: 14px;
+}
+
+.usageOption input {
+  width: 18px;
+  height: 18px;
+  accent-color: #2a6784;
+  margin: 0 0 6px;
+}
+
+.usageOption strong {
+  color: #18232d;
+}
+
+.usageOption span {
+  color: #687480;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.usageOptionActive {
+  border-color: #2a6784;
+  background: #f0f6f8;
+  box-shadow: inset 0 0 0 1px #2a6784;
+}
+
+.hint,
+.auditNote,
+.footerNote {
+  color: #687480;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.hint {
+  margin: -8px 0 14px;
+}
+
+.filePicker {
+  display: grid;
+  place-items: center;
+  min-height: 110px;
+  border: 2px dashed #b8c4ca;
+  border-radius: 14px;
+  background: #f7fafb;
+  color: #2a6784;
+  cursor: pointer;
+  font-weight: 800;
+  padding: 18px;
+  text-align: center;
+}
+
+.filePicker input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.fileList {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+}
+
+.fileList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid #ece7df;
+  border-radius: 10px;
+  background: #faf8f3;
+  padding: 11px 12px;
+}
+
+.fileList li div {
+  min-width: 0;
+}
+
+.fileList strong,
+.fileList li div span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileList strong {
+  color: #273441;
+  font-size: 14px;
+}
+
+.fileList li div span {
+  color: #687480;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.fileState {
+  flex: 0 0 auto;
+  color: #2a6784;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.confirmation {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 12px;
+  border: 1px solid #d7c6ae;
+  border-radius: 12px;
+  background: #fffaf2;
+  color: #3a4652;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1.55;
+  padding: 16px;
+}
+
+.confirmation input {
+  width: 20px;
+  height: 20px;
+  accent-color: #be4a74;
+  margin-top: 2px;
+}
+
+.auditNote {
+  margin: 10px 0 0;
+}
+
+.success,
+.error {
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.45;
+  padding: 14px 16px;
+}
+
+.success {
+  border: 1px solid #9bd2b0;
+  background: #ecf8f0;
+  color: #17643a;
+}
+
+.error {
+  border: 1px solid #f0aaa8;
+  background: #fff1f1;
+  color: #9b2521;
+}
+
+.submit {
+  width: 100%;
+  min-height: 56px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #be4a74, #2a6784);
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  padding: 14px 20px;
+}
+
+.submit:disabled {
+  background: #aab3bc;
+  cursor: not-allowed;
+}
+
+.footerNote {
+  margin: -4px auto 0;
+  max-width: 620px;
+  text-align: center;
+}
+
+@media (max-width: 680px) {
+  .page {
+    padding: 18px 14px 44px;
+  }
+
+  .header {
+    align-items: flex-start;
+  }
+
+  .intro {
+    padding: 38px 2px 24px;
+  }
+
+  .intro h1 {
+    font-size: 38px;
+  }
+
+  .intro > p:last-child {
+    font-size: 16px;
+  }
+
+  .card {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    border-radius: 14px;
+    padding: 18px 16px;
+  }
+
+  .step {
+    width: 32px;
+    height: 32px;
+  }
+
+  .cardContent h2 {
+    font-size: 21px;
+    margin-top: 0;
+  }
+
+  .grid,
+  .usageGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .usageOption {
+    grid-template-columns: 24px 80px minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .usageOption input {
+    margin: 0;
+  }
+
+  .fileList li {
+    align-items: flex-start;
+  }
+}

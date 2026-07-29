@@ -44,6 +44,7 @@ export default async function ObjectDetailPage({ params, searchParams }) {
             <div className="admin-field"><span>Projekt</span><strong>{property.project_name || '—'}</strong></div>
             <div className="admin-field"><span>Status</span><strong>{objectStatusLabel(property.status)}</strong></div>
             <div className="admin-field"><span>Bildrechte</span><strong>{rightsStatusLabel(property.photo_rights_status)}</strong></div>
+            <div className="admin-field"><span>Nutzung</span><strong>{property.material_usage || '—'}</strong></div>
             <div className="admin-field"><span>Ort</span><strong>{[property.address_label, property.district, property.city].filter(Boolean).join(' · ')}</strong></div>
             <div className="admin-field"><span>Hot / Warm</span><strong>{property.hot_leads} / {property.warm_leads}</strong></div>
           </div>
@@ -57,6 +58,41 @@ export default async function ObjectDetailPage({ params, searchParams }) {
             <div className="admin-field"><span>Likes</span><strong>{metricValue(property.likes)}</strong></div>
             <div className="admin-field"><span>Saves / Shares</span><strong>{metricValue(property.saves)} / {metricValue(property.shares)}</strong></div>
           </div>
+        </section>
+
+        <section className="admin-panel admin-detail-wide">
+          <div className="admin-panel-heading"><div><h2>Data-Room-Fotos</h2></div></div>
+          {property.photos.length === 0 ? <div className="admin-status-note">Noch keine geprüften Fotos hochgeladen.</div> : (
+            <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Datei</th><th>Typ</th><th>Größe</th><th>Upload</th><th>Aktion</th></tr></thead><tbody>
+              {property.photos.map((photo) => (
+                <tr key={photo.id}>
+                  <td><strong>{photo.original_filename}</strong></td>
+                  <td>{photo.content_type}</td>
+                  <td>{(Number(photo.byte_size) / 1024 / 1024).toFixed(1)} MB</td>
+                  <td>{formatAdminDate(photo.uploaded_at)}</td>
+                  <td><a className="admin-small-link" href={`/admin/objects/${property.id}/photos/${photo.id}`}>Herunterladen</a></td>
+                </tr>
+              ))}
+            </tbody></table></div>
+          )}
+        </section>
+
+        <section className="admin-panel admin-detail-wide">
+          <div className="admin-panel-heading"><div><h2>Rechtebestätigungen</h2></div></div>
+          {property.rightsConfirmations.length === 0 ? <div className="admin-status-note">Noch keine dokumentierte Bestätigung.</div> : (
+            <div className="admin-replies">
+              {property.rightsConfirmations.map((confirmation) => (
+                <article className="admin-reply" key={confirmation.id}>
+                  <div className="admin-reply-header">
+                    <strong>{confirmation.confirmed_by_name} · {confirmation.confirmed_by_email}</strong>
+                    <span>{formatAdminDate(confirmation.confirmed_at)}</span>
+                  </div>
+                  <p className="admin-reply-text">{confirmation.confirmation_text}</p>
+                  <div className="admin-help">Textversion {confirmation.text_version} · Nutzung {confirmation.material_usage}</div>
+                </article>
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="admin-panel admin-detail-wide">

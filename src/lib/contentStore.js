@@ -736,7 +736,7 @@ export async function getPropertyDetail(propertyId) {
   const property = propertyResult.properties[0]
   if (!property) return null
 
-  const [postsResult, leadsResult] = await Promise.all([
+  const [postsResult, leadsResult, photosResult, confirmationsResult] = await Promise.all([
     listContentPosts({ propertyId }),
     query(
       `
@@ -748,9 +748,38 @@ export async function getPropertyDetail(propertyId) {
       `,
       [propertyId]
     ),
+    query(
+      `
+        SELECT
+          id, original_filename, content_type, byte_size,
+          blob_pathname, uploaded_at
+        FROM property_photos
+        WHERE property_id = $1
+          AND upload_status = 'ready'
+        ORDER BY uploaded_at DESC
+      `,
+      [propertyId]
+    ),
+    query(
+      `
+        SELECT
+          id, confirmed_by_name, confirmed_by_email, confirmed_at,
+          text_version, confirmation_text, material_usage
+        FROM property_rights_confirmations
+        WHERE property_id = $1
+        ORDER BY confirmed_at DESC
+      `,
+      [propertyId]
+    ),
   ])
 
-  return { ...property, posts: postsResult.posts, leads: leadsResult.rows }
+  return {
+    ...property,
+    posts: postsResult.posts,
+    leads: leadsResult.rows,
+    photos: photosResult.rows,
+    rightsConfirmations: confirmationsResult.rows,
+  }
 }
 
 export async function linkLeadToPropertiesByExternalKeys({ leadId, tenantId, externalKeys, source = 'quiz_selection' }) {

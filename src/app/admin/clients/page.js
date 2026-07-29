@@ -1,5 +1,7 @@
 import AdminNav from '@/components/AdminNav'
+import DataRoomAccessManager from '@/components/admin/DataRoomAccessManager'
 import { listClients, listContentAccounts, listProjects } from '@/lib/contentStore'
+import { listTenantAccessTokens } from '@/lib/dataRoomStore'
 import { metricValue } from '@/lib/adminDisplay'
 
 export const dynamic = 'force-dynamic'
@@ -11,18 +13,21 @@ export default async function ClientsAdminPage({ searchParams }) {
   let clients = []
   let projects = []
   let accounts = []
+  let accessTokens = []
   let databaseError = ''
 
   try {
-    const [clientResult, projectRows, accountRows] = await Promise.all([
+    const [clientResult, projectRows, accountRows, tokenRows] = await Promise.all([
       listClients(),
       listProjects(),
       listContentAccounts(),
+      listTenantAccessTokens(),
     ])
     configured = clientResult.configured
     clients = clientResult.clients
     projects = projectRows
     accounts = accountRows
+    accessTokens = tokenRows
   } catch (error) {
     configured = true
     databaseError = error.message
@@ -75,6 +80,16 @@ export default async function ClientsAdminPage({ searchParams }) {
             <button className="admin-primary-button" type="submit">Kunde anlegen</button>
           </div>
         </form>
+      </section>
+
+      <section className="admin-panel admin-section-gap">
+        <div className="admin-panel-heading">
+          <div>
+            <h2>Data-Room-Zugänge</h2>
+            <p>Token-Links sind vom Admin-Login getrennt, werden nur gehasht gespeichert und können hier widerrufen werden.</p>
+          </div>
+        </div>
+        <DataRoomAccessManager clients={clients} initialTokens={accessTokens} />
       </section>
 
       <section className="admin-panel">
