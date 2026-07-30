@@ -165,27 +165,87 @@ describe('Data Room submission notice', () => {
     expect(message).toContain('Fotos: 6')
   })
 
-  it('lets the database decide who announces a submission, so it happens once', () => {
-    const store = readFileSync(new URL('../src/lib/dataRoomStore.js', import.meta.url), 'utf8')
-    const migration = readFileSync(
-      new URL('../db/migrations/20260731_data_room_submission_notice.sql', import.meta.url),
-      'utf8'
-    )
-
-    expect(migration).toContain('ADD COLUMN IF NOT EXISTS submission_notified_at timestamptz')
-    expect(store).toContain('SET submission_notified_at = now()')
-    expect(store).toContain('AND prc.submission_notified_at IS NULL')
-    // Without both conditions the notice fires while uploads are still running,
-    // or fires for a submission in which every single file failed.
-    expect(store).toContain("AND pp.upload_status = 'pending'")
-    expect(store).toContain("AND pp.upload_status = 'ready'")
+  it('marks a package the client never finished, which reads differently', () => {
+    const message = buildDataRoomSubmissionMessage({ ...submission, closed_reason: 'timed_out' })
+    expect(message).toContain('nicht abgeschlossen')
   })
 
-  it('never lets a failed notice break the client upload', () => {
-    const finalize = readFileSync(
-      new URL('../src/app/api/kunde/[token]/finalize/route.js', import.meta.url),
+  it('says nothing about completion when the client closed the package himself', () => {
+    const message = buildDataRoomSubmissionMessage({
+      ...submission,
+      closed_reason: 'client_submitted',
+    })
+    expect(message).not.toContain('nicht abgeschlossen')
+  })
+})
+
+describe('Data Room submission closing', () => {
+  const migration = readFileSync(
+    new URL('../db/migrations/20260731_data_room_submission_close.sql', import.meta.url),
+    'utf8'
+  )
+  const store = readFileSync(new URL('../src/lib/dataRoomStore.js', import.meta.url), 'utf8')
+
+  it('records that a package ended and which of the two ways it ended', () => {
+    expect(migration).toContain('ADD COLUMN IF NOT EXISTS closed_at timestamptz')
+    expect(migration).toContain("closed_reason IN ('client_submitted', 'timed_out')")
+  })
+
+  it('refuses to record a notice for a package that is still open', () => {
+    expect(migration).toContain('CHECK (notified_at IS NULL OR closed_at IS NOT NULL)')
+  })
+
+  it('lets the browser close its own package, since only it knows the package ended', () => {
+    const form = readFileSync(
+      new URL('../src/components/DataRoomForm.jsx', import.meta.url),
       'utf8'
     )
-    expect(finalize).toMatch(/async function announceCompletedSubmission[\s\S]*?try \{[\s\S]*?catch/)
+    expect(form).toContain('/complete')
+    expect(form).toContain('closeSubmission(preparation.confirmation.id)')
+    expect(store).toContain("SET closed_at = now(), closed_reason = 'client_submitted'")
+    expect(store).toContain('AND closed_at IS NULL')
+  })
+
+  it('settles whatever was still pending when the client closed the package', () => {
+    expect(store).toMatch(/closeSubmission[\s\S]*?rejection_reason = 'Upload wurde nicht abgeschlossen'/)
+  })
+
+  it('closes a package the browser abandoned, but only once its slots expired', () => {
+    expect(store).toContain("SET closed_at = now(), closed_reason = 'timed_out'")
+    expect(store).toMatch(/sweepAbandonedSubmissions[\s\S]*?AND expires_at <= now\(\)/)
+    // Without this the sweep would close packages whose upload is still running.
+    expect(store).toMatch(/sweepAbandonedSubmissions[\s\S]*?NOT EXISTS[\s\S]*?upload_status = 'pending'/)
+  })
+
+  it('claims the notice in the database, so a package is announced once', () => {
+    expect(store).toContain('SET notified_at = now()')
+    expect(store).toContain('AND prc.closed_at IS NOT NULL')
+    expect(store).toContain('AND prc.notified_at IS NULL')
+  })
+
+  it('scopes the notice to the caller, since the package id comes from the browser', () => {
+    const complete = readFileSync(
+      new URL('../src/app/api/kunde/[token]/complete/route.js', import.meta.url),
+      'utf8'
+    )
+    expect(store).toContain('AND ($2::text IS NULL OR prc.tenant_id = $2::text)')
+    expect(complete).toContain('tenantId: access.tenant_id')
+  })
+
+  it('never lets a failed notice break the client submission', () => {
+    const complete = readFileSync(
+      new URL('../src/app/api/kunde/[token]/complete/route.js', import.meta.url),
+      'utf8'
+    )
+    expect(complete).toMatch(/try \{[\s\S]*?claimSubmissionNotice[\s\S]*?\} catch/)
+  })
+
+  it('runs the sweep on a schedule, since an abandoned package has no caller', () => {
+    const config = JSON.parse(
+      readFileSync(new URL('../vercel.json', import.meta.url), 'utf8')
+    )
+    expect(config.crons).toContainEqual(
+      expect.objectContaining({ path: '/api/cron/data-room-sweep' })
+    )
   })
 })

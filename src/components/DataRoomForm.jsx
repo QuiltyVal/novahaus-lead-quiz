@@ -88,6 +88,17 @@ export default function DataRoomForm({ token, initialProperties, styles }) {
     )))
   }
 
+  // Closing is bookkeeping between browser and server. The client's photos are
+  // already stored, so a failure here must not become an error on their screen;
+  // the nightly sweep closes what this call could not.
+  async function closeSubmission(confirmationId) {
+    await fetch(`/api/kunde/${encodeURIComponent(token)}/complete`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ confirmationId }),
+    }).catch(() => {})
+  }
+
   async function submit(event) {
     event.preventDefault()
     setBusy(true)
@@ -141,6 +152,11 @@ export default function DataRoomForm({ token, initialProperties, styles }) {
         updateProgress(index, { state: 'ready', value: 100 })
       }
 
+      // The package ends here, and only the browser knows it. Without this the
+      // server would have to guess completion from whichever file finished last
+      // and could never tell a finished submission from an abandoned one.
+      await closeSubmission(preparation.confirmation.id)
+
       setProperties((current) => {
         const existing = current.find((property) => property.id === preparation.property.id)
         const nextProperty = {
@@ -167,6 +183,9 @@ export default function DataRoomForm({ token, initialProperties, styles }) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ slotIds: preparation.slots.map((slot) => slot.id) }),
         }).catch(() => {})
+        // A failed submission is still a finished one. Whatever did arrive is
+        // worth announcing now rather than surfacing as abandoned a day later.
+        await closeSubmission(preparation.confirmation.id)
       }
       setStatus({
         type: 'error',

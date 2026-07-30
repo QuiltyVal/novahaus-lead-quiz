@@ -416,35 +416,106 @@ export async function markPhotoReady({ slotId, blob }) {
   throw new Error('Dieser Upload kann nicht abgeschlossen werden.')
 }
 
-// Claims the right to announce a finished submission. Photos finalize one
-// request at a time and often in parallel, so "no pending slots left" is true
-// for every one of the last concurrent callers. The conditional update settles
-// it in the database: exactly one caller gets a row back, the rest get null.
+// The browser knows when a submission is over: it prepares the package, moves
+// every file, and returns. Closing it is that one statement, made once, instead
+// of being inferred from whichever file happened to finish last.
 //
-// A submission where every file was rejected is not announced. Those slots
-// never return to pending, so there is nothing left to wait for.
-export async function claimCompletedSubmission(rightsConfirmationId) {
-  const id = normalizeUuid(rightsConfirmationId, 'Bestätigungs-ID')
+// Anything still pending at that point did not make it. The client already saw
+// the error and moved on, so the slot is settled here rather than left to time
+// out and reappear as an abandoned package hours later.
+export async function closeSubmission({ accessToken, confirmationId }) {
+  const access = await resolveDataRoomAccess(accessToken)
+  const id = normalizeUuid(confirmationId, 'Bestätigungs-ID')
+
+  return withTransaction(async (client) => {
+    const claimed = await client.query(
+      `
+        UPDATE property_rights_confirmations
+        SET closed_at = now(), closed_reason = 'client_submitted'
+        WHERE id = $1
+          AND tenant_id = $2
+          AND closed_at IS NULL
+        RETURNING id
+      `,
+      [id, access.tenant_id]
+    )
+    if (!claimed.rows[0]) return null
+
+    await client.query(
+      `
+        UPDATE property_photos
+        SET upload_status = 'rejected',
+            rejection_reason = 'Upload wurde nicht abgeschlossen'
+        WHERE rights_confirmation_id = $1
+          AND tenant_id = $2
+          AND upload_status = 'pending'
+      `,
+      [id, access.tenant_id]
+    )
+    return claimed.rows[0]
+  })
+}
+
+// A browser that dies mid-submission never closes its package, and the photos
+// that did arrive would otherwise sit unannounced forever: the only other
+// cleanup runs inside prepare, which needs the same client to come back.
+//
+// Slots carry their own upload window, so an expired one is proof the transfer
+// is not merely slow. A package whose slots have all expired is over.
+export async function sweepAbandonedSubmissions() {
+  if (!isDatabaseConfigured()) return { expired_slots: 0, closed_submissions: 0 }
+
+  return withTransaction(async (client) => {
+    const expired = await client.query(
+      `
+        UPDATE property_photos
+        SET upload_status = 'rejected',
+            rejection_reason = 'Upload-Zeitfenster abgelaufen'
+        WHERE upload_status = 'pending'
+          AND expires_at <= now()
+        RETURNING id
+      `
+    )
+
+    const closed = await client.query(
+      `
+        UPDATE property_rights_confirmations prc
+        SET closed_at = now(), closed_reason = 'timed_out'
+        WHERE prc.closed_at IS NULL
+          AND NOT EXISTS (
+            SELECT 1 FROM property_photos pp
+            WHERE pp.rights_confirmation_id = prc.id
+              AND pp.upload_status = 'pending'
+          )
+        RETURNING prc.id
+      `
+    )
+
+    return {
+      expired_slots: expired.rows.length,
+      closed_submissions: closed.rows.length,
+    }
+  })
+}
+
+// Claims the right to announce a closed package. Both the browser and the sweep
+// can close one, and a retry can ask again, so the claim settles in the database
+// instead of in whichever caller got there first.
+export async function claimSubmissionNotice({ confirmationId = null, tenantId = null } = {}) {
+  if (!isDatabaseConfigured()) return []
+  const id = confirmationId ? normalizeUuid(confirmationId, 'Bestätigungs-ID') : null
   const { rows } = await query(
     `
       UPDATE property_rights_confirmations prc
-      SET submission_notified_at = now()
+      SET notified_at = now()
       FROM properties p
       JOIN tenants t ON t.id = p.tenant_id
-      WHERE prc.id = $1
-        AND prc.submission_notified_at IS NULL
+      WHERE ($1::uuid IS NULL OR prc.id = $1::uuid)
+        AND ($2::text IS NULL OR prc.tenant_id = $2::text)
+        AND prc.closed_at IS NOT NULL
+        AND prc.notified_at IS NULL
         AND p.id = prc.property_id
         AND p.tenant_id = prc.tenant_id
-        AND NOT EXISTS (
-          SELECT 1 FROM property_photos pp
-          WHERE pp.rights_confirmation_id = prc.id
-            AND pp.upload_status = 'pending'
-        )
-        AND EXISTS (
-          SELECT 1 FROM property_photos pp
-          WHERE pp.rights_confirmation_id = prc.id
-            AND pp.upload_status = 'ready'
-        )
       RETURNING
         prc.id,
         prc.tenant_id,
@@ -452,6 +523,7 @@ export async function claimCompletedSubmission(rightsConfirmationId) {
         prc.confirmed_by_name,
         prc.confirmed_by_email,
         prc.material_usage,
+        prc.closed_reason,
         t.name AS tenant_name,
         p.title AS property_title,
         p.address_label,
@@ -465,9 +537,9 @@ export async function claimCompletedSubmission(rightsConfirmationId) {
           WHERE pp.rights_confirmation_id = prc.id AND pp.upload_status = 'rejected'
         ) AS rejected_count
     `,
-    [id]
+    [id, tenantId]
   )
-  return rows[0] || null
+  return rows
 }
 
 export async function rejectPhotoUpload(slotId, reason) {

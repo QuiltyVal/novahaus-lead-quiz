@@ -36,6 +36,12 @@ export function buildDataRoomSubmissionMessage(submission = {}) {
   const rejected = Number(submission.rejected_count || 0)
   if (rejected > 0) lines.push('', `Abgelehnte Dateien: ${rejected}`)
 
+  // A package the client never closed means the browser died mid-upload. What
+  // arrived is usable, but it is not what the client meant to send.
+  if (submission.closed_reason === 'timed_out') {
+    lines.push('', 'Hinweis: Der Kunde hat die Übermittlung nicht abgeschlossen.')
+  }
+
   if (submission.property_id) {
     lines.push('', `Objekt öffnen: /admin/objects/${submission.property_id}`)
   }
