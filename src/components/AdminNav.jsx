@@ -5,6 +5,7 @@ const ITEMS = [
   { id: 'content', href: '/admin/content', label: 'Content' },
   { id: 'objects', href: '/admin/objects', label: 'Objekte' },
   { id: 'clients', href: '/admin/clients', label: 'Kunden' },
+  { id: 'migrations', href: '/admin/migrations', label: 'Migrationen' },
 ]
 
 export default function AdminNav({ active }) {

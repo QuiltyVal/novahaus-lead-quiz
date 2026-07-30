@@ -7,7 +7,7 @@ import {
   getMigrationStatus,
   runMigrations,
   sha256,
-} from '../scripts/lib/db-migrations.js'
+} from '../src/lib/dbMigrations.js'
 
 const temporaryDirectories = []
 
@@ -160,6 +160,7 @@ describe('database migration runner', () => {
 
     expect(result.applied).toEqual([])
     expect(result.pending).toEqual([])
+    expect(result.skipped.map((migration) => migration.filename)).toEqual([filename])
     expect(client.migrationSql).toEqual([])
   })
 
@@ -174,6 +175,28 @@ describe('database migration runner', () => {
       .rejects.toThrow(`Migration ${filename} failed`)
     expect(client.applied.has(filename)).toBe(false)
     expect(client.queries.some((query) => query.sql === 'ROLLBACK')).toBe(true)
+  })
+
+  it('reports migrations committed before a later migration fails', async () => {
+    const migrationsDir = await createMigrations({
+      '20260712_first.sql': 'SELECT 1 AS migration_one;',
+      '20260716_failing.sql': 'SELECT FAIL_ME;',
+    })
+    const client = new FakeDatabaseClient({ failOnSql: 'FAIL_ME' })
+
+    let failure
+    try {
+      await runMigrations({ client, migrationsDir })
+    } catch (error) {
+      failure = error
+    }
+
+    expect(failure?.message).toContain('20260716_failing.sql')
+    expect(failure?.migrationResult.applied.map((migration) => migration.filename)).toEqual([
+      '20260712_first.sql',
+    ])
+    expect(client.applied.has('20260712_first.sql')).toBe(true)
+    expect(client.applied.has('20260716_failing.sql')).toBe(false)
   })
 
   it('keeps status and dry-run read-only when the tracking table is absent', async () => {

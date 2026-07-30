@@ -6,7 +6,7 @@ import {
   baselineMigration,
   getMigrationStatus,
   runMigrations,
-} from './lib/db-migrations.js'
+} from '../src/lib/dbMigrations.js'
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const migrationsDir = path.join(projectRoot, 'db', 'migrations')

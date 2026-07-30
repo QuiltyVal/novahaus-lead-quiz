@@ -162,12 +162,14 @@ async function applyMigration(client, migration) {
 export async function runMigrations({ client, migrationsDir, dryRun = false }) {
   const status = await getMigrationStatus({ client, migrationsDir })
   const pending = status.migrations.filter((migration) => migration.status === 'pending')
+  const skipped = status.migrations.filter((migration) => migration.status === 'applied')
 
   if (dryRun) {
     return {
       ...status,
       applied: [],
       pending,
+      skipped,
       dryRun: true,
     }
   }
@@ -175,13 +177,24 @@ export async function runMigrations({ client, migrationsDir, dryRun = false }) {
   await ensureSchemaMigrationsTable(client)
   const applied = []
   for (const migration of pending) {
-    if (await applyMigration(client, migration)) applied.push(migration)
+    try {
+      if (await applyMigration(client, migration)) applied.push(migration)
+      else skipped.push(migration)
+    } catch (error) {
+      error.migrationResult = {
+        applied,
+        skipped,
+        pending,
+      }
+      throw error
+    }
   }
 
   return {
     ...status,
     applied,
     pending,
+    skipped,
     dryRun: false,
   }
 }

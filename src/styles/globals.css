@@ -3510,6 +3510,47 @@ a {
   background: #9b2521;
 }
 
+.admin-baseline-button {
+  background: #a36b1d;
+}
+
+.admin-operation-result {
+  display: grid;
+  gap: 5px;
+}
+
+.admin-operation-result span {
+  overflow-wrap: anywhere;
+}
+
+.admin-migrations-table {
+  min-width: 1050px;
+}
+
+.admin-migration-status {
+  border-radius: 999px;
+  color: #fff !important;
+  display: inline-flex !important;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 6px 10px;
+}
+
+.admin-migration-status--applied {
+  background: #17643a;
+}
+
+.admin-migration-status--pending {
+  background: #a36b1d;
+}
+
+.admin-migration-hash {
+  display: inline-block;
+  font-size: 12px;
+  max-width: 360px;
+  overflow-wrap: anywhere;
+}
+
 .admin-token-action {
   align-items: end;
 }

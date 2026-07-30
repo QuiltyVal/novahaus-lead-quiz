@@ -31,6 +31,16 @@ export async function query(text, params = []) {
   return getPool().query(text, params)
 }
 
+export async function withDatabaseClient(callback) {
+  const client = await getPool().connect()
+
+  try {
+    return await callback(client)
+  } finally {
+    client.release()
+  }
+}
+
 export async function withTransaction(callback) {
   const client = await getPool().connect()
 
