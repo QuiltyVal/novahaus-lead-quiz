@@ -1,8 +1,8 @@
 import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
-import dotenv from 'dotenv'
-import pg from 'pg'
+import { createDatabaseClient } from './lib/database.js'
+import { stripTransactionWrapper } from './lib/db-migrations.js'
 
 function parseArgs(values) {
   const args = {}
@@ -21,27 +21,12 @@ function parseArgs(values) {
   return args
 }
 
-function stripTransactionWrapper(sql) {
-  return sql
-    .replace(/^\s*BEGIN;\s*/i, '')
-    .replace(/\s*COMMIT;\s*$/i, '')
-}
-
 const args = parseArgs(process.argv.slice(2))
 if (!args.file) throw new Error('--file is required')
 
-if (args.env) dotenv.config({ path: path.resolve(args.env), override: true })
-else dotenv.config({ path: path.resolve('.env.local') })
-
-const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL
-if (!connectionString) throw new Error('DATABASE_URL is not configured')
-
 const filePath = path.resolve(args.file)
 const sql = stripTransactionWrapper(readFileSync(filePath, 'utf8'))
-const client = new pg.Client({
-  connectionString,
-  ssl: /localhost|127\.0\.0\.1/.test(connectionString) ? undefined : { rejectUnauthorized: false },
-})
+const client = createDatabaseClient({ envFile: args.env })
 
 await client.connect()
 try {
