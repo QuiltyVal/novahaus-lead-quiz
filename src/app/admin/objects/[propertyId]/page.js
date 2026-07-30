@@ -12,12 +12,30 @@ export default async function ObjectDetailPage({ params, searchParams }) {
   const queryParams = await searchParams
   if (!isDatabaseConfigured()) return <main className="admin-shell"><div className="admin-status-note">DATABASE_URL ist nicht konfiguriert.</div></main>
 
+  // A failing query used to be swallowed into notFound(), so a broken lookup
+  // was indistinguishable from an object that does not exist.
   let property
+  let loadError = ''
   try {
     property = await getPropertyDetail(propertyId)
-  } catch {
-    notFound()
+  } catch (error) {
+    console.error(`Object detail failed: property_id=${propertyId} message=${error.message}`)
+    loadError = error.message
   }
+
+  if (loadError) {
+    return (
+      <main className="admin-shell">
+        <header className="admin-header">
+          <div><h1>Objekt konnte nicht geladen werden</h1></div>
+          <Link className="admin-link-button" href="/admin/objects">Zurück</Link>
+        </header>
+        <AdminNav active="objects" />
+        <div className="admin-status-note">{loadError}</div>
+      </main>
+    )
+  }
+
   if (!property) notFound()
 
   return (
