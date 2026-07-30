@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
+import { buildDataRoomSubmissionMessage } from '../src/lib/dataRoomHandoff'
 import {
   DATA_ROOM_MAX_FILE_SIZE,
   RIGHTS_TEXT_VERSION,
@@ -115,5 +116,76 @@ describe('Data Room database and route boundaries', () => {
     )
     expect(middleware).toContain("matcher: ['/admin/:path*']")
     expect(middleware).not.toContain("'/kunde/:path*'")
+  })
+})
+
+describe('Data Room submission notice', () => {
+  const submission = {
+    property_id: '11111111-2222-4333-8444-555555555555',
+    tenant_name: 'Maklerbüro Leipzig',
+    property_title: 'Wohnung Karl-Heine-Straße',
+    address_label: 'Karl-Heine-Straße 1',
+    district: 'Plagwitz',
+    material_usage: 'both',
+    confirmed_by_name: 'Erika Maklerin',
+    confirmed_by_email: 'erika@example.com',
+    ready_count: 6,
+    rejected_count: 0,
+  }
+
+  it('names the client, the object, the photo count and who confirmed the rights', () => {
+    const message = buildDataRoomSubmissionMessage(submission)
+
+    expect(message).toContain('Maklerbüro Leipzig')
+    expect(message).toContain('Wohnung Karl-Heine-Straße')
+    expect(message).toContain('Karl-Heine-Straße 1 · Plagwitz')
+    expect(message).toContain('Fotos: 6')
+    expect(message).toContain('organisch und bezahlt')
+    expect(message).toContain('Erika Maklerin')
+    expect(message).toContain('erika@example.com')
+    expect(message).toContain(`/admin/objects/${submission.property_id}`)
+  })
+
+  it('stays silent about rejected files when there were none', () => {
+    expect(buildDataRoomSubmissionMessage(submission)).not.toContain('Abgelehnte')
+  })
+
+  it('surfaces rejected files, which the client never reports', () => {
+    const message = buildDataRoomSubmissionMessage({ ...submission, rejected_count: 2 })
+    expect(message).toContain('Abgelehnte Dateien: 2')
+  })
+
+  it('renders without an address, which the client may leave empty', () => {
+    const message = buildDataRoomSubmissionMessage({
+      ...submission,
+      address_label: '',
+      district: '',
+    })
+    expect(message).not.toContain('Ort:')
+    expect(message).toContain('Fotos: 6')
+  })
+
+  it('lets the database decide who announces a submission, so it happens once', () => {
+    const store = readFileSync(new URL('../src/lib/dataRoomStore.js', import.meta.url), 'utf8')
+    const migration = readFileSync(
+      new URL('../db/migrations/20260731_data_room_submission_notice.sql', import.meta.url),
+      'utf8'
+    )
+
+    expect(migration).toContain('ADD COLUMN IF NOT EXISTS submission_notified_at timestamptz')
+    expect(store).toContain('SET submission_notified_at = now()')
+    expect(store).toContain('AND prc.submission_notified_at IS NULL')
+    // Without both conditions the notice fires while uploads are still running,
+    // or fires for a submission in which every single file failed.
+    expect(store).toContain("AND pp.upload_status = 'pending'")
+    expect(store).toContain("AND pp.upload_status = 'ready'")
+  })
+
+  it('never lets a failed notice break the client upload', () => {
+    const finalize = readFileSync(
+      new URL('../src/app/api/kunde/[token]/finalize/route.js', import.meta.url),
+      'utf8'
+    )
+    expect(finalize).toMatch(/async function announceCompletedSubmission[\s\S]*?try \{[\s\S]*?catch/)
   })
 })

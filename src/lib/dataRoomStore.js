@@ -416,6 +416,60 @@ export async function markPhotoReady({ slotId, blob }) {
   throw new Error('Dieser Upload kann nicht abgeschlossen werden.')
 }
 
+// Claims the right to announce a finished submission. Photos finalize one
+// request at a time and often in parallel, so "no pending slots left" is true
+// for every one of the last concurrent callers. The conditional update settles
+// it in the database: exactly one caller gets a row back, the rest get null.
+//
+// A submission where every file was rejected is not announced. Those slots
+// never return to pending, so there is nothing left to wait for.
+export async function claimCompletedSubmission(rightsConfirmationId) {
+  const id = normalizeUuid(rightsConfirmationId, 'Bestätigungs-ID')
+  const { rows } = await query(
+    `
+      UPDATE property_rights_confirmations prc
+      SET submission_notified_at = now()
+      FROM properties p
+      JOIN tenants t ON t.id = p.tenant_id
+      WHERE prc.id = $1
+        AND prc.submission_notified_at IS NULL
+        AND p.id = prc.property_id
+        AND p.tenant_id = prc.tenant_id
+        AND NOT EXISTS (
+          SELECT 1 FROM property_photos pp
+          WHERE pp.rights_confirmation_id = prc.id
+            AND pp.upload_status = 'pending'
+        )
+        AND EXISTS (
+          SELECT 1 FROM property_photos pp
+          WHERE pp.rights_confirmation_id = prc.id
+            AND pp.upload_status = 'ready'
+        )
+      RETURNING
+        prc.id,
+        prc.tenant_id,
+        prc.property_id,
+        prc.confirmed_by_name,
+        prc.confirmed_by_email,
+        prc.material_usage,
+        t.name AS tenant_name,
+        p.title AS property_title,
+        p.address_label,
+        p.district,
+        (
+          SELECT count(*)::int FROM property_photos pp
+          WHERE pp.rights_confirmation_id = prc.id AND pp.upload_status = 'ready'
+        ) AS ready_count,
+        (
+          SELECT count(*)::int FROM property_photos pp
+          WHERE pp.rights_confirmation_id = prc.id AND pp.upload_status = 'rejected'
+        ) AS rejected_count
+    `,
+    [id]
+  )
+  return rows[0] || null
+}
+
 export async function rejectPhotoUpload(slotId, reason) {
   const id = normalizeUuid(slotId, 'Upload-ID')
   await query(
@@ -445,7 +499,7 @@ export async function cancelPhotoUploads({ accessToken, slotIds }) {
       WHERE tenant_id = $1
         AND id = ANY($2::uuid[])
         AND upload_status = 'pending'
-      RETURNING id
+      RETURNING id, rights_confirmation_id
     `,
     [access.tenant_id, ids]
   )
