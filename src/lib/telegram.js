@@ -1,4 +1,5 @@
 import { buildDataRoomSubmissionMessage } from '@/lib/dataRoomHandoff'
+import { buildVideoDecisionMessage } from '@/lib/videoReviewHandoff'
 
 function truncateText(value, limit = 2800) {
   const text = String(value || '').trim()
@@ -50,5 +51,11 @@ export async function sendTelegramLeadReplyNotification({ lead, replyText }) {
 export async function sendTelegramDataRoomSubmissionNotification(submission) {
   return postTelegramMessage(buildDataRoomSubmissionMessage(submission), {
     property_id: submission?.property_id || '',
+  })
+}
+
+export async function sendTelegramVideoDecisionNotification(decision) {
+  return postTelegramMessage(buildVideoDecisionMessage(decision), {
+    video_id: decision?.video_id || '',
   })
 }
