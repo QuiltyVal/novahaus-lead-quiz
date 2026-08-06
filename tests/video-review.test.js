@@ -204,7 +204,7 @@ describe('Operator video review upload', () => {
 
   it('opens the created video for review only after the browser upload succeeds', () => {
     expect(form.indexOf('await upload(')).toBeLessThan(
-      form.indexOf('await fetch(`/admin/objects/${encodeURIComponent(propertyId)}/videos`')
+      form.indexOf('await adminFetch(`/admin/objects/${encodeURIComponent(propertyId)}/videos`')
     )
     expect(creationRoute.indexOf('INSERT INTO videos')).toBeLessThan(
       creationRoute.indexOf('await openVideoForReview({')

@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { adminFetch } from '@/lib/adminFetch'
 
 function formatDate(value) {
   if (!value) return '—'
@@ -26,7 +27,7 @@ export default function DataRoomAccessManager({ clients, initialTokens }) {
     setGeneratedLink('')
     setStatus('')
     try {
-      const response = await fetch('/admin/clients/access-tokens', {
+      const response = await adminFetch('/admin/clients/access-tokens', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tenantId }),
@@ -54,7 +55,7 @@ export default function DataRoomAccessManager({ clients, initialTokens }) {
     setBusy(true)
     setStatus('')
     try {
-      const response = await fetch('/admin/clients/access-tokens', {
+      const response = await adminFetch('/admin/clients/access-tokens', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tokenId }),

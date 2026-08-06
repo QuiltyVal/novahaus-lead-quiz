@@ -198,3 +198,26 @@ describe('admin middleware authentication responses', () => {
     expect(response.headers.get('x-middleware-next')).toBe('1')
   })
 })
+
+describe('admin requests after a session ends', () => {
+  const helper = readFileSync(
+    new URL('../src/lib/adminFetch.js', import.meta.url),
+    'utf8'
+  )
+
+  it('sends the operator to the login page instead of printing the 401', () => {
+    expect(helper).toContain('response.status === 401')
+    expect(helper).toContain("window.location.assign('/admin/login')")
+  })
+
+  it('is used by every admin call, so no screen can strand on a dead session', () => {
+    for (const file of [
+      '../src/components/admin/DataRoomAccessManager.jsx',
+      '../src/components/admin/VideoForReviewForm.jsx',
+    ]) {
+      const source = readFileSync(new URL(file, import.meta.url), 'utf8')
+      expect(source).toContain('adminFetch')
+      expect(source).not.toMatch(/await fetch\(/)
+    }
+  })
+})

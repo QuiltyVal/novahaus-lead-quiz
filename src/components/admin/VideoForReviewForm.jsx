@@ -2,6 +2,7 @@
 
 import { upload } from '@vercel/blob/client'
 import { useRef, useState } from 'react'
+import { adminFetch } from '@/lib/adminFetch'
 import {
   validateVideoDescriptor,
   VIDEO_REVIEW_CONTENT_TYPE,
@@ -59,7 +60,7 @@ export default function VideoForReviewForm({ propertyId, tenantId, blobAccess })
 
       setProgress(100)
       setStage('saving')
-      const response = await fetch(`/admin/objects/${encodeURIComponent(propertyId)}/videos`, {
+      const response = await adminFetch(`/admin/objects/${encodeURIComponent(propertyId)}/videos`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
