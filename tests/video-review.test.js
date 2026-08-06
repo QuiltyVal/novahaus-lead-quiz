@@ -170,7 +170,7 @@ describe('Operator video review upload', () => {
     'utf8'
   )
 
-  it('keeps the upload handler inside the Basic Auth protected admin tree', () => {
+  it('keeps the upload handler inside the session-protected admin tree', () => {
     expect(uploadRoute).toContain('handleUpload')
     expect(middleware).toContain("matcher: ['/admin/:path*']")
     expect(form).toContain('/admin/objects/${encodeURIComponent(propertyId)}/videos/upload')

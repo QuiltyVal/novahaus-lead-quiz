@@ -1,32 +1,7 @@
 import { NextResponse } from 'next/server'
+import { ADMIN_SESSION_COOKIE, verifyAdminSession } from './lib/adminSession'
 
-function unauthorized() {
-  return new NextResponse('Authentication required', {
-    status: 401,
-    headers: {
-      'WWW-Authenticate': 'Basic realm="NovaHaus Admin"',
-    },
-  })
-}
-
-function parseBasicAuth(header) {
-  if (!header?.startsWith('Basic ')) return null
-
-  try {
-    const decoded = atob(header.slice(6))
-    const separatorIndex = decoded.indexOf(':')
-    if (separatorIndex === -1) return null
-
-    return {
-      username: decoded.slice(0, separatorIndex),
-      password: decoded.slice(separatorIndex + 1),
-    }
-  } catch {
-    return null
-  }
-}
-
-export function middleware(request) {
+export async function middleware(request) {
   const adminPassword = process.env.ADMIN_PASSWORD || ''
   const host = request.headers.get('host') || ''
   const isLocalhost = host.startsWith('localhost:') || host.startsWith('127.0.0.1:')
@@ -41,15 +16,29 @@ export function middleware(request) {
     })
   }
 
-  const expectedUsername = process.env.ADMIN_USERNAME || 'admin'
-  const credentials = parseBasicAuth(request.headers.get('authorization'))
+  const pathname = request.nextUrl.pathname
+  if (pathname === '/admin/login' || pathname === '/admin/login/') {
+    if (request.method === 'POST') {
+      return NextResponse.rewrite(new URL('/admin/login/submit', request.url))
+    }
 
-  if (
-    !credentials ||
-    credentials.username !== expectedUsername ||
-    credentials.password !== adminPassword
-  ) {
-    return unauthorized()
+    return NextResponse.next()
+  }
+
+  if (pathname === '/admin/login/submit' || pathname === '/admin/login/submit/') {
+    return NextResponse.next()
+  }
+
+  const sessionValue = request.cookies.get(ADMIN_SESSION_COOKIE)?.value
+  const sessionIsValid = await verifyAdminSession(sessionValue, adminPassword)
+
+  if (!sessionIsValid) {
+    const acceptsHtml = (request.headers.get('accept') || '').toLowerCase().includes('text/html')
+    if (!acceptsHtml) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+
+    return NextResponse.redirect(new URL('/admin/login', request.url), { status: 303 })
   }
 
   return NextResponse.next()

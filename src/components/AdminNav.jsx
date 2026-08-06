@@ -20,6 +20,9 @@ export default function AdminNav({ active }) {
           {item.label}
         </Link>
       ))}
+      <form method="post" action="/admin/logout">
+        <button className="admin-link-button" type="submit">Abmelden</button>
+      </form>
     </nav>
   )
 }
