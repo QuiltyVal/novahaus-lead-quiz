@@ -1,8 +1,10 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import AdminNav from '@/components/AdminNav'
+import VideoForReviewForm from '@/components/admin/VideoForReviewForm'
 import { formatAdminDate, metricValue, objectStatusLabel, rightsStatusLabel } from '@/lib/adminDisplay'
 import { getPropertyDetail, isDatabaseConfigured } from '@/lib/contentStore'
+import { getDataRoomBlobAccess } from '@/lib/dataRoomBlob'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -76,6 +78,15 @@ export default async function ObjectDetailPage({ params, searchParams }) {
             <div className="admin-field"><span>Likes</span><strong>{metricValue(property.likes)}</strong></div>
             <div className="admin-field"><span>Saves / Shares</span><strong>{metricValue(property.saves)} / {metricValue(property.shares)}</strong></div>
           </div>
+        </section>
+
+        <section className="admin-panel admin-detail-wide">
+          <div className="admin-panel-heading"><div><h2>Video an den Kunden senden</h2></div></div>
+          <VideoForReviewForm
+            propertyId={property.id}
+            tenantId={property.tenant_id}
+            blobAccess={getDataRoomBlobAccess()}
+          />
         </section>
 
         <section className="admin-panel admin-detail-wide">

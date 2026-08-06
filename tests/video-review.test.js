@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { buildVideoDecisionMessage } from '../src/lib/videoReviewHandoff'
 import {
+  validateVideoDescriptor,
+  VIDEO_REVIEW_MAX_FILE_SIZE,
+} from '../src/lib/videoReviewUpload'
+import {
   VIDEO_DECISION_TEXT_VERSION,
   validateVideoDecision,
   videoDecisionText,
@@ -145,5 +149,67 @@ describe('Video release database and route boundaries', () => {
       'utf8'
     )
     expect(route).toMatch(/try \{[\s\S]*?sendTelegramVideoDecisionNotification[\s\S]*?\} catch/)
+  })
+})
+
+describe('Operator video review upload', () => {
+  const middleware = readFileSync(
+    new URL('../src/middleware.js', import.meta.url),
+    'utf8'
+  )
+  const uploadRoute = readFileSync(
+    new URL('../src/app/admin/objects/[propertyId]/videos/upload/route.js', import.meta.url),
+    'utf8'
+  )
+  const creationRoute = readFileSync(
+    new URL('../src/app/admin/objects/[propertyId]/videos/route.js', import.meta.url),
+    'utf8'
+  )
+  const form = readFileSync(
+    new URL('../src/components/admin/VideoForReviewForm.jsx', import.meta.url),
+    'utf8'
+  )
+
+  it('keeps the upload handler inside the Basic Auth protected admin tree', () => {
+    expect(uploadRoute).toContain('handleUpload')
+    expect(middleware).toContain("matcher: ['/admin/:path*']")
+    expect(form).toContain('/admin/objects/${encodeURIComponent(propertyId)}/videos/upload')
+    expect(form).not.toContain('/api/admin/')
+  })
+
+  it('accepts only MP4 video files up to 200 MB', () => {
+    expect(validateVideoDescriptor({
+      name: 'rundgang.mp4',
+      type: 'video/mp4',
+      size: VIDEO_REVIEW_MAX_FILE_SIZE,
+    }).type).toBe('video/mp4')
+    expect(() => validateVideoDescriptor({
+      name: 'rundgang.mov',
+      type: 'video/quicktime',
+      size: 10_000,
+    })).toThrow('Nur MP4-Videos')
+    expect(() => validateVideoDescriptor({
+      name: 'rundgang.mp4',
+      type: 'video/mp4',
+      size: VIDEO_REVIEW_MAX_FILE_SIZE + 1,
+    })).toThrow('größer als 200 MB')
+    expect(uploadRoute).toContain('allowedContentTypes: [VIDEO_REVIEW_CONTENT_TYPE]')
+  })
+
+  it('takes tenant_id from the object instead of the request body', () => {
+    expect(creationRoute).toMatch(/SELECT id, tenant_id[\s\S]*?FROM properties/)
+    expect(creationRoute).toContain('tenantId: property.tenant_id')
+    expect(creationRoute).not.toMatch(/body\?\.tenant/i)
+  })
+
+  it('opens the created video for review only after the browser upload succeeds', () => {
+    expect(form.indexOf('await upload(')).toBeLessThan(
+      form.indexOf('await fetch(`/admin/objects/${encodeURIComponent(propertyId)}/videos`')
+    )
+    expect(creationRoute.indexOf('INSERT INTO videos')).toBeLessThan(
+      creationRoute.indexOf('await openVideoForReview({')
+    )
+    expect(creationRoute).toContain("purpose, format_slug, status")
+    expect(creationRoute).toContain("'property', 'kundenvideo', 'ready'")
   })
 })
