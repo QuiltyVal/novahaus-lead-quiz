@@ -2,6 +2,7 @@ import AdminNav from '@/components/AdminNav'
 import {
   ApplyMigrationsForm,
   BaselineMigrationForm,
+  UnbaselineMigrationForm,
 } from '@/components/admin/MigrationForms'
 import {
   getAdminMigrationStatus,
@@ -41,8 +42,14 @@ function OperationResult({ params }) {
   const applied = parseMigrationList(params.applied)
   const skipped = parseMigrationList(params.skipped)
   const baselined = typeof params.baselined === 'string' ? [params.baselined] : []
+  const unbaselined = typeof params.unbaselined === 'string' ? [params.unbaselined] : []
   const error = typeof params.error === 'string' ? params.error : ''
   const successful = !error
+
+  const heading = {
+    baseline: 'Baseline-Ergebnis',
+    unbaseline: 'Markierung entfernt',
+  }[operation] || 'Migrationslauf-Ergebnis'
 
   return (
     <section
@@ -51,15 +58,16 @@ function OperationResult({ params }) {
       }`}
       aria-live="polite"
     >
-      <strong>
-        {operation === 'baseline' ? 'Baseline-Ergebnis' : 'Migrationslauf-Ergebnis'}
-      </strong>
+      <strong>{heading}</strong>
       <span>
         Angewendet: {applied.length > 0 ? applied.join(', ') : 'keine'}
       </span>
       <span>
         Nur markiert: {baselined.length > 0 ? baselined.join(', ') : 'keine'}
       </span>
+      {unbaselined.length > 0 ? (
+        <span>Wieder ausstehend: {unbaselined.join(', ')}</span>
+      ) : null}
       <span>
         Übersprungen: {skipped.length > 0 ? skipped.join(', ') : 'keine'}
       </span>
@@ -166,7 +174,9 @@ export default async function MigrationsAdminPage({ searchParams }) {
                         <td>
                           {migration.status === 'pending' ? (
                             <BaselineMigrationForm filename={migration.filename} />
-                          ) : '—'}
+                          ) : (
+                            <UnbaselineMigrationForm filename={migration.filename} />
+                          )}
                         </td>
                       </tr>
                     ))}

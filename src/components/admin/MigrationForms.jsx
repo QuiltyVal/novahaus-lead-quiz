@@ -48,3 +48,28 @@ export function BaselineMigrationForm({ filename }) {
     </form>
   )
 }
+
+// The counterpart to "Nur markieren": a file marked by mistake is otherwise
+// never offered again, and the schema it describes silently never arrives.
+export function UnbaselineMigrationForm({ filename }) {
+  function confirmUnbaseline(event) {
+    const confirmed = window.confirm(
+      `Markierung für ${filename} entfernen? Die Datei wird danach wieder als ausstehend angezeigt.`
+    )
+
+    if (!confirmed) event.preventDefault()
+  }
+
+  return (
+    <form
+      method="post"
+      action="/admin/migrations/unbaseline"
+      onSubmit={confirmUnbaseline}
+    >
+      <input type="hidden" name="filename" value={filename} />
+      <button className="admin-primary-button admin-baseline-button" type="submit">
+        Markierung entfernen
+      </button>
+    </form>
+  )
+}

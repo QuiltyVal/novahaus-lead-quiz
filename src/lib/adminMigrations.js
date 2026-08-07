@@ -3,6 +3,7 @@ import {
   baselineMigration,
   getMigrationStatus,
   runMigrations,
+  unbaselineMigration,
 } from '@/lib/dbMigrations'
 import { withDatabaseClient } from '@/lib/db'
 
@@ -40,4 +41,10 @@ export function safeMigrationError(error) {
   return message
     .replace(POSTGRES_URL_PATTERN, 'postgresql://[redacted]')
     .slice(0, 1200)
+}
+
+export function unbaselineAdminMigration(filename) {
+  return withMigrationClient(({ client, migrationsDir }) =>
+    unbaselineMigration({ client, migrationsDir, filename })
+  )
 }

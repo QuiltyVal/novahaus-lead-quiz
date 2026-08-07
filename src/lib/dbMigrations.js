@@ -239,3 +239,25 @@ export async function baselineMigration({ client, migrationsDir, filename }) {
     })
   }
 }
+
+// A baselined migration is recorded as applied without its SQL ever running.
+// That is correct for schema that predates the ledger, and wrong for anything
+// else — the file is then never offered again, so the columns it was supposed
+// to create are missing while the ledger claims otherwise. Removing the row
+// puts the file back in the pending list; the SQL itself is untouched.
+export async function unbaselineMigration({ client, migrationsDir, filename }) {
+  const status = await getMigrationStatus({ client, migrationsDir })
+  const migration = status.migrations.find((item) => item.filename === filename)
+  if (!migration) {
+    throw new Error(`Migration file not found: ${filename}`)
+  }
+  if (migration.status === 'pending') {
+    return { migration, alreadyPending: true }
+  }
+
+  const result = await client.query(
+    'DELETE FROM public.schema_migrations WHERE filename = $1 RETURNING filename',
+    [migration.filename]
+  )
+  return { migration, alreadyPending: !result.rows[0] }
+}
